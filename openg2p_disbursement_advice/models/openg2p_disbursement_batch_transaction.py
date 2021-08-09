@@ -164,9 +164,9 @@ class BatchTransaction(models.Model):
         }
         files = {
             "data": (csvname, open(csvname, "rb")),
+            "request_id": (None, str(self.request_id)),
             "note": (None, "Bulk transfers"),
             "checksum": (None, str(self.generate_hash(csvname))),
-            "request_id": (None, str(self.request_id)),
         }
 
         url_mock = "http://15.207.23.72:5000/channel/bulk/transfer"

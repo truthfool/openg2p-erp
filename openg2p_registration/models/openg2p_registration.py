@@ -18,9 +18,6 @@ AVAILABLE_PRIORITIES = [("0", "Urgent"), ("1", "High"), ("2", "Normal"), ("3", "
 BASE_URL = "http://3.139.225.16:9080"
 
 
-BASE_URL = "http://3.139.225.16:9080"
-
-
 class Registration(models.Model):
     _name = "openg2p.registration"
     _description = "Registration"
@@ -907,6 +904,10 @@ class Registration(models.Model):
 
         # Merging specfic fields to beneficiary
         existing_beneficiary.write(cleaned_overwrite_data)
+        existing_beneficiary.write(
+            {
+                "batch_status":False
+            })
 
         # Creating new beneficiary whose active=False
         new_beneficiary = self.env["openg2p.beneficiary"].create(cleaned_existing_data)
@@ -918,6 +919,7 @@ class Registration(models.Model):
 
         # Setting active false
         new_beneficiary.active = False
+        new_beneficiary.batch_status = True
 
         self.clear_beneficiaries()
 
