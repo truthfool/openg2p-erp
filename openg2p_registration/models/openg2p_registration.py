@@ -10,6 +10,8 @@ from odoo.addons.queue_job.job import job
 from odoo import api, fields, models, SUPERUSER_ID
 from odoo.exceptions import UserError, ValidationError
 from odoo.tools.translate import _
+import requests
+import json
 
 AVAILABLE_PRIORITIES = [("0", "Urgent"), ("1", "High"), ("2", "Normal"), ("3", "Low")]
 
@@ -902,6 +904,10 @@ class Registration(models.Model):
 
         # Merging specfic fields to beneficiary
         existing_beneficiary.write(cleaned_overwrite_data)
+        existing_beneficiary.write(
+            {
+                "batch_status":False
+            })
 
         # Creating new beneficiary whose active=False
         new_beneficiary = self.env["openg2p.beneficiary"].create(cleaned_existing_data)
@@ -913,6 +919,7 @@ class Registration(models.Model):
 
         # Setting active false
         new_beneficiary.active = False
+        new_beneficiary.batch_status = True
 
         self.clear_beneficiaries()
 

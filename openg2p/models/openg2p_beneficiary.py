@@ -349,9 +349,8 @@ class Beneficiary(models.Model):
 
     # For checking if a beneficiary already sent under a batch
     batch_status = fields.Boolean(
-        string="Transaction Made",
+        string="Transaction Made or Not",
         default=False,
-        readonly=True,
         track_visibility="onchange",
     )
 
