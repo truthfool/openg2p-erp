@@ -96,6 +96,7 @@ class DisbursementFile(models.Model):
                         "state_id": state_id,
                         "country_id": country_id,
                         "bank_account_id": bank_id.id,
+                        "grand_total": b["amount"],
                     }
                 )
 

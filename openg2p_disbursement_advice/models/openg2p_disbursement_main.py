@@ -84,6 +84,12 @@ class DisbursementMain(models.Model):
         default=None,
     )
 
+    note = fields.Text(
+        string="Note for Benficiary",
+        required=False,
+        default="",
+    )
+
     def generate_uuid(self):
         for rec in self:
             if not rec.beneficiary_request_id:

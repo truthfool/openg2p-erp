@@ -85,6 +85,12 @@ class BatchTransaction(models.Model):
         readonly=True,
     )
 
+    token_response = fields.Text(
+        string="Token for transaction",
+        required=False,
+        default=None,
+    )
+
     total = fields.Char(string="Total", readonly=True)
 
     successful = fields.Char(string="Successful", readonly=True)
@@ -130,24 +136,27 @@ class BatchTransaction(models.Model):
 
             with open(csvname, "a") as csvfile:
                 csvwriter = csv.writer(csvfile)
+                entry = [
+                    "id",
+                    "request_id",
+                    "payment_mode",
+                    "amount",
+                    "currency",
+                    "note",
+                ]
+                csvwriter.writerow(entry)
                 for rec in beneficiary_transactions:
                     entry = [
                         rec.id,
                         rec.beneficiary_request_id,
-                        rec.payment_mode,
-                        rec.name,
-                        rec.acc_holder_name,
+                        rec.payment_mode or "gsma",
                         rec.amount,
                         rec.currency_id.name,
                         rec.note
                     ]
 
                     # id,request_id,payment_mode,acc_number,acc_holder_name,amount,currency,note
-                    beneficiary_transaction_records = []
-                    beneficiary_transaction_records.append(entry)
-                    csvwriter.writerows(
-                        map(lambda x: [x], beneficiary_transaction_records)
-                    )
+                    csvwriter.writerow(entry)
 
             offset += len(beneficiary_transactions)
 
@@ -156,6 +165,29 @@ class BatchTransaction(models.Model):
             beneficiary_transactions = self.env["openg2p.disbursement.main"].search(
                 [("batch_id", "=", self.id)], limit=limit, offset=offset
             )
+
+        # return
+
+        url_token = "http://identity.ibank.financial/oauth/token"
+
+        headers_token = {
+            "Platform-TenantId": "ibank-usa",
+            "Authorization": "Basic Y2xpZW50Og==",
+            "Content-Type": "text/plain",
+        }
+        params_token = {
+            "username": os.environ.get("username"),
+            "password": os.environ.get("password"),
+            "grant_type": os.environ.get("grant_type"),
+        }
+
+        response_token = requests.request(
+            "POST", url_token, headers=headers_token, params=params_token
+        )
+
+        response_token_data = response_token.json()
+
+        self.token_response = response_token_data["access_token"]
 
         # Uploading to AWS bucket
         uploaded = self.upload_to_aws(csvname, "paymenthub-ee-dev")
@@ -180,7 +212,7 @@ class BatchTransaction(models.Model):
             self.transaction_batch_id = response_data["batch_id"]
 
         except BaseException as e:
-            return e
+            print(e)
 
     def bulk_transfer_status(self):
         params = (
@@ -208,7 +240,7 @@ class BatchTransaction(models.Model):
             self.failed = response_data["failed"]
 
         except BaseException as e:
-            return e
+            print(e)
 
     def upload_to_aws(self, local_file, bucket):
 
@@ -232,14 +264,7 @@ class BatchTransaction(models.Model):
             s3.put_object(Bucket=bucket, Body=csv_buf.getvalue(), Key=local_file)
 
         except FileNotFoundError:
-            return False
-
-    def all_transactions_status(self):
-        try:
-            response = requests.get("https://15.207.23.72:5000/channel/transfer")
-            return response
-        except BaseException as e:
-            return e
+            print("File not found")
 
     def generate_hash(self, csvname):
         sha256 = hashlib.sha256()
@@ -253,4 +278,4 @@ class BatchTransaction(models.Model):
             res = sha256.hexdigest()
             return res
         except BaseException as e:
-            return e
+            print(e)
