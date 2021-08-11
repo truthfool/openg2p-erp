@@ -191,7 +191,7 @@ class BatchTransaction(models.Model):
             'Accept': 'application/json, text/plain, /',
             'Accept-Language': 'en-US,en;q=0.5',
             'Platform-TenantId': 'ibank-usa',
-            'Authorization': 'Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsiaWRlbnRpdHktcHJvdmlkZXIiLCJpYmFuay11c2EiXSwidXNlcl9uYW1lIjoibWlmb3MiLCJzY29wZSI6WyJpZGVudGl0eSJdLCJleHAiOjE2MjgwOTU4NjMsImF1dGhvcml0aWVzIjpbIlJFRlVORCIsIkFMTF9GVU5DVElPTlMiXSwianRpIjoidWxDNlFVQURzWWFuUzlFNGlVNWV2QkdyK0hBPSIsImNsaWVudF9pZCI6ImNsaWVudCJ9.yResYuOVEL1CVryXH1bH0MEZvLLhaJ3dlr7SfTX6C18ZY2_hn-1tL06ZPXLyOY0Ur5S3pYaSRljihoIRzvMzrBm40IawkdhcdPTSG5z05EVL5Icn1szcvOzx6lzsX5SmFLboa28eorwtHWE0a0EfUuGWl_7XwRjlfceRv91JEyxT8EEqjPA0V5ow-UBdU9lA3XIZBJgWNq9aUCVPg91kfKIhsWinnG7SxJzq3Pr2M8TyESYlL6d_dcc94UXmOiMregYFBI6hbjWilYo4MIK-uowgV6Mfl2HIteWGyRO938fGTqHazbB59V_FybaoO3QB-PYQRMrNSYVFVmimC-iRhw',
+            'Authorization': 'Bearer ',
             'Connection': 'keep-alive'
         }
 
