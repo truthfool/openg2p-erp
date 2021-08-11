@@ -23,23 +23,18 @@ class BeneficiaryTransactionWizard(models.TransientModel):
         )
         params = (
             ("batch_id", str(batch.transaction_batch_id)),
-            ("detailed", "true"),
         )
 
-        url_mock = "http://15.207.23.72:5000/channel/bulk/transfer"
-        url_real = "http://892c546a-us-east.lb.appdomain.cloud/channel/bulk/transfer"
+        url="http://ops-bk.ibank.financial/api/v1/batch"
 
         try:
-            response_mock = requests.get(url_mock, params=params)
-            response_real = requests.get(url_real, params=params)
+            response = requests.get(url, params=params)
 
-            response_mock_data = response_mock.json()
+            response_data = response.json()
 
-            print(response_mock_data)
-            self.file_url = response_mock_data["file"]
+            self.file_url = response_data["file"]
 
-            url_mock = self.file_url
-            a = urlparse(url_mock)
+            a = urlparse(url)
 
             file_name = os.path.basename(a.path)
 
@@ -47,10 +42,10 @@ class BeneficiaryTransactionWizard(models.TransientModel):
                 "s3",
                 aws_access_key_id=os.environ.get(
                     "access_key"
-                ),  # secret_keys.ACCESS_KEY,
+                ),
                 aws_secret_access_key=os.environ.get(
                     "secret_access_key"
-                ),  # secret_keys.SECRET_KEY,
+                ),
             )
 
             s3.Bucket("openg2p-dev").download_file(file_name, file_name)

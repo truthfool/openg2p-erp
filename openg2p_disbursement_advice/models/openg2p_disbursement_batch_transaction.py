@@ -139,6 +139,7 @@ class BatchTransaction(models.Model):
                         rec.acc_holder_name,
                         rec.amount,
                         rec.currency_id.name,
+                        rec.note
                     ]
 
                     # id,request_id,payment_mode,acc_number,acc_holder_name,amount,currency,note
@@ -157,49 +158,55 @@ class BatchTransaction(models.Model):
             )
 
         # Uploading to AWS bucket
-        # uploaded = self.upload_to_aws(csvname, "paymenthub-ee-dev")
+        uploaded = self.upload_to_aws(csvname, "paymenthub-ee-dev")
 
         headers = {
-            # "Content-Type": "multipart/form-data",
+            'Platform-TenantId': 'ibank-usa',
         }
         files = {
             "data": (csvname, open(csvname, "rb")),
             "request_id": (None, str(self.request_id)),
             "note": (None, "Bulk transfers"),
-            "checksum": (None, str(self.generate_hash(csvname))),
+            # "checksum": (None, str(self.generate_hash(csvname))),
         }
 
-        url_mock = "http://15.207.23.72:5000/channel/bulk/transfer"
-        url_real = "http://892c546a-us-east.lb.appdomain.cloud/channel/bulk/transfer/"
+        url="http://channel.ibank.financial/channel/bulk/transfer"
 
         try:
-            response_mock = requests.post(url_mock, headers=headers, files=files)
-            response_mock_data = response_mock.json()
-            self.transaction_status = response_mock_data["status"]
-            self.transaction_batch_id = response_mock_data["batch_id"]
+            response = requests.post(url, headers=headers, files=files)
+            response_data = response.json()
+            
+            self.transaction_status = response_data["status"]
+            self.transaction_batch_id = response_data["batch_id"]
 
-            response_real = requests.post(url_real, headers=headers, files=files)
         except BaseException as e:
             return e
 
     def bulk_transfer_status(self):
         params = (
             ("batch_id", str(self.transaction_batch_id)),
-            ("detailed", "true"),
         )
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:90.0) Gecko/20100101 Firefox/90.0',
+            'Accept': 'application/json, text/plain, /',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Platform-TenantId': 'ibank-usa',
+            'Authorization': 'Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsiaWRlbnRpdHktcHJvdmlkZXIiLCJpYmFuay11c2EiXSwidXNlcl9uYW1lIjoibWlmb3MiLCJzY29wZSI6WyJpZGVudGl0eSJdLCJleHAiOjE2MjgwOTU4NjMsImF1dGhvcml0aWVzIjpbIlJFRlVORCIsIkFMTF9GVU5DVElPTlMiXSwianRpIjoidWxDNlFVQURzWWFuUzlFNGlVNWV2QkdyK0hBPSIsImNsaWVudF9pZCI6ImNsaWVudCJ9.yResYuOVEL1CVryXH1bH0MEZvLLhaJ3dlr7SfTX6C18ZY2_hn-1tL06ZPXLyOY0Ur5S3pYaSRljihoIRzvMzrBm40IawkdhcdPTSG5z05EVL5Icn1szcvOzx6lzsX5SmFLboa28eorwtHWE0a0EfUuGWl_7XwRjlfceRv91JEyxT8EEqjPA0V5ow-UBdU9lA3XIZBJgWNq9aUCVPg91kfKIhsWinnG7SxJzq3Pr2M8TyESYlL6d_dcc94UXmOiMregYFBI6hbjWilYo4MIK-uowgV6Mfl2HIteWGyRO938fGTqHazbB59V_FybaoO3QB-PYQRMrNSYVFVmimC-iRhw',
+            'Connection': 'keep-alive'
+        }
 
-        url_mock = "http://15.207.23.72:5000/channel/bulk/transfer"
-        url_real = "http://892c546a-us-east.lb.appdomain.cloud/channel/bulk/transfer/"
+
+        url="http://ops-bk.ibank.financial/api/v1/batch"
 
         try:
-            response_mock = requests.get(url_mock, params=params)
-            response_mock_data = response_mock.json()
+            response = requests.get(url, params=params,headers=headers)
+            response_data = response.json()
             
-            self.transaction_status = response_mock_data["status"]
-            self.total = response_mock_data["total"]
-            self.successful = response_mock_data["successful"]
-            self.failed = response_mock_data["failed"]
-            # response_real = requests.get(url_real, params=params)
+            self.transaction_status = response_data["status"]
+            self.total = response_data["total"]
+            self.successful = response_data["successful"]
+            self.failed = response_data["failed"]
+
         except BaseException as e:
             return e
 
@@ -212,10 +219,10 @@ class BatchTransaction(models.Model):
                 "s3",
                 aws_access_key_id=os.environ.get(
                     "access_key"
-                ),  # secret_keys.ACCESS_KEY,
+                ),
                 aws_secret_access_key=os.environ.get(
                     "secret_access_key"
-                ),  # secret_keys.SECRET_KEY,
+                ),
             )
             csv_buf = StringIO()
 

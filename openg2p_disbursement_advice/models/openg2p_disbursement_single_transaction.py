@@ -155,6 +155,8 @@ class SingleTransaction(models.Model):
 
             self.transaction_status = response.json().get("status")
 
+            self.beneficiary_id["batch_status"]=True
+
         except BaseException as e:
             return e
 

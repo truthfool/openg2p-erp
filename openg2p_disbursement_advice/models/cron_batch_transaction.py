@@ -52,6 +52,7 @@ class CronBatchTransaction(models.Model):
                         rec.acc_holder_name,
                         rec.amount,
                         rec.currency_id.name,
+                        rec.note
                     ]
 
                     # id,request_id,payment_mode,acc_number,acc_holder_name,amount,currency,note
@@ -70,28 +71,27 @@ class CronBatchTransaction(models.Model):
             )
 
         # Uploading to AWS bucket
-        # uploaded = batch.upload_to_aws(csvname, "paymenthub-ee-dev")
-
+        uploaded = batch.upload_to_aws(csvname, "paymenthub-ee-dev")
+        
         headers = {
-            # "Content-Type": "multipart/form-data",
+            'Platform-TenantId': 'ibank-usa',
         }
         files = {
             "data": (csvname, open(csvname, "rb")),
-            "note": (None, "Bulk transfers"),
-            "checksum": (None, str(batch.generate_hash(csvname))),
             "request_id": (None, str(batch.request_id)),
+            "note": (None, "Bulk transfers"),
+            # "checksum": (None, str(batch.generate_hash(csvname))),
         }
 
-        url_mock = "http://15.207.23.72:5000/channel/bulk/transfer"
-        url_real = "http://892c546a-us-east.lb.appdomain.cloud/channel/bulk/transfer/"
+        url="http://channel.ibank.financial/channel/bulk/transfer"
 
         try:
-            response_mock = requests.post(url_mock, headers=headers, files=files)
-            response_mock_data = response_mock.json()
-            batch.transaction_status = response_mock_data["status"]
-            batch.transaction_batch_id = response_mock_data["batch_id"]
+            response = requests.post(url, headers=headers, files=files)
+            response_data = response.json()
+            
+            self.transaction_status = response_data["status"]
+            self.transaction_batch_id = response_data["batch_id"]
 
-            response_real = requests.post(url_real, headers=headers, files=files)
         except BaseException as e:
-            print(e)
+            return e
         

@@ -161,7 +161,7 @@ class DisbursementFile(models.Model):
                     {
                         "name": self.batch_name
                         + "-"
-                        + str(datetime.now().strftime("%d%m%y-%I:%M")),
+                        + str(datetime.now().strftime("%d%m%y-%I:%M:%S")),
                         "program_id": program,
                         "state": "draft",
                         "date_start": datetime.now(),
@@ -177,13 +177,13 @@ class DisbursementFile(models.Model):
                             "bank_account_id": bank_id.id,
                             "batch_id": batch.id,
                             "state": "draft",
-                            "name": str(b.id),
+                            "name": str(b.name),
                             "beneficiary_id": b.id,
-                            "amount": 100.0,
+                            "amount": b.grand_total,
                             "program_id": b.program_ids.ids[0],
                             "date_start": datetime.now(),
                             "date_end": datetime.now(),
-                            "currency_id": 1,
+                            "currency_id": bank_id.currency_id,
                             "payment_mode": bank_id.payment_mode,
                         }
                     )
