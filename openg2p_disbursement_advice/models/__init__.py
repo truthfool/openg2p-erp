@@ -15,7 +15,8 @@ from . import res_partner_bank
 from . import openg2p_disbursement_single_transaction
 from . import openg2p_disbursement_batch_transaction
 from . import openg2p_disbursement_main
-from . import detailed_payment_status
+from . import detailed_status
 from . import openg2p_disbursement_file
 from . import cron_batch_transaction
 from . import openg2p_disbursement_api
+from . import openg2p_detailed_payment_status

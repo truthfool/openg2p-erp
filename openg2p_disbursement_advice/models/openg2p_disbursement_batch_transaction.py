@@ -218,23 +218,15 @@ class BatchTransaction(models.Model):
                 [("batch_id", "=", self.id)], limit=limit, offset=offset
             )
 
-        url_token = "http://identity.ibank.financial/oauth/token"
+        url_token = "http://ops-bk.ibank.financial/oauth/token?grant_type=client_credentials"
 
         headers_token = {
-            "Platform-TenantId": "ibank-usa",
-            "Authorization": "Basic Y2xpZW50Og==",
-            "Content-Type": "text/plain",
-        }
-        params_token = {
-            "username": os.environ.get("username"),
-            "password": os.environ.get("password"),
-            "grant_type": os.environ.get("grant_type"),
+            'Platform-TenantId': 'ibank-usa',
+            'Authorization': 'Basic Y2hhbm5lbC1pYmFuay11c2E6cDEyMzQ='
         }
 
         try:
-            response_token = requests.request(
-                "POST", url_token, headers=headers_token, params=params_token
-            )
+            response_token = requests.request("POST", url_token, headers=headers_token)
 
             response_token_data = response_token.json()
             self.token_response = response_token_data["access_token"]
@@ -298,8 +290,28 @@ class BatchTransaction(models.Model):
                 self.ongoing_amount = response_data["ongoing_amount"]
                 self.failed_amount = response_data["failed_amount"]
 
+                self.create_detailed_status()
         except BaseException as e:
             print(e)
+
+    def create_detailed_status(self):
+        url = "http://ops-bk.ibank.financial/api/v1/batch/detail"
+
+        params = (
+            ('batchId', str(self.transaction_batch_id)),
+            ('pageNo', '0'),
+            ('pageSize', '10'),
+            ('status', 'ONGOING'),
+        )
+        headers = {
+            'Platform-TenantId': 'ibank-usa',
+            'Authorization': "Bearer " + str(self.token_response)
+        }
+
+        response = requests.request("GET", url, headers=headers, params=params)
+
+        print(response.text)
+
 
     def upload_to_aws(self, local_file, bucket):
 

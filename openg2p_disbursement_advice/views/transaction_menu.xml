@@ -30,4 +30,10 @@
         sequence="8"
         parent="transaction_menu"
         action="action_file_transaction"/>
+    <menuitem
+        id="detailed_status"
+        name="Detailed Batch Status"
+        sequence="9"
+        parent="transaction_menu"
+        action="action_detailed_payment_status"/>
 </odoo>
