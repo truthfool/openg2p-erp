@@ -1,5 +1,7 @@
 from odoo import api, fields, models
 
+from datetime import date, datetime
+from dateutil.relativedelta import relativedelta
 import os
 
 
@@ -7,33 +9,9 @@ class DetailedPaymentStatus(models.Model):
     _name = "openg2p.detailed.payment.status"
     _description = "Displaying detailed payment status for each batch"
 
-    name = fields.Char(
-        required=True,
-        readonly=True,
-        states={"draft": [("readonly", False)]},
-        track_visibility="onchange",
-    )
-    program_id = fields.Many2one(
-        "openg2p.program",
-        required=True,
-        readonly=True,
-        index=True,
-        states={"draft": [("readonly", False)]},
-        track_visibility="onchange",
-    )
-    date_start = fields.Date(
-        string="Date From",
-        required=True,
-        default=lambda self: fields.Date.to_string(date.today().replace(day=1)),
-        track_visibility="onchange",
-    )
-    date_end = fields.Date(
-        string="Date To",
-        required=True,
-        default=lambda self: fields.Date.to_string(
-            (datetime.now() + relativedelta(months=+1, day=1, days=-1)).date()
-        ),
-        track_visibility="onchange",
+    batch_id = fields.Many2one(
+        "openg2p.disbursement.batch.transaction",
+        string="Batch ID"
     )
     beneficiary_id = fields.Integer(
         string="Beneficiary ID"

@@ -85,6 +85,10 @@ class BatchTransaction(models.Model):
     transaction_status = fields.Char(
         readonly=True,
     )
+    detailed_status = fields.One2many(
+        "openg2p.detailed.payment.status",
+        "batch_id",
+    )
 
     token_response = fields.Text(
         string="Token for transaction",
@@ -178,10 +182,10 @@ class BatchTransaction(models.Model):
 
         # CSV filename as RequestID+Datetime
         csvname = (
-            self.request_id
-            + "-"
-            + str(datetime.now().strftime(r"%d-%m-%Y-%H:%M"))
-            + ".csv"
+                self.request_id
+                + "-"
+                + str(datetime.now().strftime(r"%d-%m-%Y-%H:%M"))
+                + ".csv"
         )
 
         while len(beneficiary_transactions) > 0:
@@ -250,7 +254,7 @@ class BatchTransaction(models.Model):
         url="http://channel.ibank.financial/channel/bulk/transfer"
 
         try:
-            response = requests.post(url, headers=headers, files=files)
+            response = requests.post(url, files=files)
             response_data = response.json()
             
             self.transaction_status = response_data["status"]
@@ -310,8 +314,22 @@ class BatchTransaction(models.Model):
 
         response = requests.request("GET", url, headers=headers, params=params)
 
-        print(response.text)
+        response_json = response.json()
 
+        for details in response_json:
+            beneficiary_id = details["id"]
+
+            del details["id"]
+
+            details.update(
+                {
+                    "beneficiary_id": beneficiary_id,
+                    "batch_id": self.id
+                }
+            )
+            self.env["openg2p.detailed.payment.status"].create(
+                details
+            )
 
     def upload_to_aws(self, local_file, bucket):
 

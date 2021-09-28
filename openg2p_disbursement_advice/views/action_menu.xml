@@ -52,16 +52,4 @@
             </p>
         </field>
     </record>
-    <record id="action_detailed_payment_status" model="ir.actions.act_window">
-        <field name="name">Detailed Payment Status</field>
-        <field name="type">ir.actions.act_window</field>
-        <field name="res_model">openg2p.detailed.payment.status</field>
-        <field name="view_type">form</field>
-        <field name="view_mode">tree,form,kanban</field>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">
-                See detailed payment status !
-            </p>
-        </field>
-    </record>
 </odoo>

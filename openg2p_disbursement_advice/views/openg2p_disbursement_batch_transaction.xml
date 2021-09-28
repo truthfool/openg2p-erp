@@ -22,7 +22,7 @@
                         <button name="action_pending" type="object"  states="confirm" string="Pending" class="oe_highlight"/>
                         <button name="action_transaction" type="object"  states="pending" string="Complete" class="oe_highlight"/>
                         <button name="create_bulk_transfer" type="object"  states="confirm" string="Make Transfer" class="oe_highlight"/>
-                        <button name="bulk_transfer_status" type="object"  states="pending" string="Check Status" class="oe_highlight"/>
+                        <button name="bulk_transfer_status" type="object"  states="pending" string="Reconcile" class="oe_highlight"/>
                         <field name="state" widget="statusbar"/>
                     </header>
                     <sheet>
@@ -64,14 +64,28 @@
                             <field name="transaction_batch_id" attrs="{'invisible':[('state','!=','paymentstatus')]}"/>
                             <field name="request_id" attrs="{'invisible':[('state','!=','paymentstatus')]}"/>
                         </group>
-                        <group string="Beneficiaries">
-                            <field name="all_beneficiaries" nolabel="1">
-                                <tree editable="bottom">
-                                    <field name="acc_holder_name"/>
-                                    <field name="amount"/>
-                                </tree>
-                            </field>
-                        </group>
+                        <notebook colspan="4">
+                            <page name="Beneficiary Details" string="Beneficiary Details">
+                                <group string="Beneficiaries">
+                                    <field name="all_beneficiaries" nolabel="1">
+                                        <tree editable="bottom">
+                                            <field name="acc_holder_name"/>
+                                            <field name="amount"/>
+                                        </tree>
+                                    </field>
+                                </group>
+                            </page>
+                            <page name="Detailed Status" string="Detailed Payment Status" attrs="{'invisible':[('state','!=','paymentstatus')]}">
+                                <group string="Batch">
+                                    <field name="detailed_status" nolabel="1">
+                                        <tree editable="bottom">
+                                            <field name="currency"/>
+                                            <field name="amount"/>
+                                        </tree>
+                                    </field>
+                                </group>
+                            </page>
+                        </notebook>
                         <group>
                             <field name="total_disbursement_amount" string="Total Disbursement Amount"/>    
                         </group>
