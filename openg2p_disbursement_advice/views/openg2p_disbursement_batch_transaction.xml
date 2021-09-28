@@ -75,13 +75,12 @@
                                     </field>
                                 </group>
                             </page>
-                            <page name="Detailed Status" string="Detailed Payment Status" attrs="{'invisible':[('state','!=','paymentstatus')]}">
+                            <page name="Reconciliation Page" string="Detailed Payment Status" attrs="{'invisible':[('state','!=','paymentstatus')]}">
                                 <group string="Batch">
                                     <field name="detailed_status" nolabel="1">
                                         <tree editable="bottom">
                                             <field name="beneficiary_id"/>
                                             <field name="errorInformation"/>
-                                            <field name="amount"/>
                                         </tree>
                                     </field>
                                 </group>

@@ -116,7 +116,7 @@ class BatchTransaction(models.Model):
 
     completed_amount = fields.Char(string="Completed Amount", readonly=True)
 
-    ongoing_amount = fields.Char(string="Reconciliation Amount", readonly=True)
+    ongoing_amount = fields.Char(string="Pending Amount", readonly=True)
 
     failed_amount = fields.Char(string="Failed Amount", readonly=True)
 
@@ -282,6 +282,7 @@ class BatchTransaction(models.Model):
         try:
             response = requests.get(url, params=params,headers=headers)
             response_data = response.json()
+            print(response_data)
 
             if response.status_code == 200:
                 self.transaction_status = "completed"
@@ -294,15 +295,74 @@ class BatchTransaction(models.Model):
                 self.ongoing_amount = response_data["ongoing_amount"]
                 self.failed_amount = response_data["failed_amount"]
 
+                
                 self.create_detailed_status()
         except BaseException as e:
             print(e)
 
     def create_detailed_status(self):
+        demo_data=[{
+            "batch_id":"c02a14f0-5e7e-44a1-88eb-5584a21e6f28",
+            "beneficiary_id":"1",
+            "errorInformation":"Incorrect account details for transactionId: e5eea064-1445-4d32-bc55-bd9826c779a0",
+            "workflowInstanceKey":"22513",
+            "transactionId":"e5eea064-1445-4d32-bc55-bd9826c779a0",
+            "startedAt":"1629",
+            "completedAt":"162913",
+            "status":"IN_PROGRESS",
+            "statusDetail":"The transactions are in progress.",
+            "payeeDfspId":"ibank-india",
+            "payeePartyId":"9199",
+            "payeePartyIdType":"MSISDN",
+            "payeeFee":"5",
+            "payeeFeeCurrency":"SL",
+            "payeeQuoteCode":"",
+            "payerDfspId":"ibank-usa",
+            "payerPartyId":"7543010",
+            "payerPartyIdType":"MSISDN",
+            "payerFee":"5",
+            "payerFeeCurrency":"USD",
+            "payerQuoteCode":"null",
+            "amount":"448",
+            "currency":"USD",
+            "direction":"OUTGOING"
+
+        },
+        {
+            "beneficiary_id":"2",
+            "errorInformation":"Insufficient balance for transactionId: 3cc88b24-1df6-48e2-8b1f-5dbd02ba96b7",
+            "workflowInstanceKey":"2251799907439003",
+            "transactionId":"3cc88b24-1df6-48e2-8b1f-5dbd02ba96b7",
+            "startedAt":"1629130966000",
+            "completedAt":"1629130967000",
+            "status":"IN_PROGRESS",
+            "statusDetail":"The transactions are in progress.",
+            "payeeDfspId":"ibank-india",
+            "payeePartyId":"919900878571",
+            "payeePartyIdType":"MSISDN",
+            "payeeFee":"5",
+            "payeeFeeCurrency":"SL",
+            "payeeQuoteCode":"",
+            "payerDfspId":"ibank-usa",
+            "payerPartyId":"7543010",
+            "payerPartyIdType":"MSISDN",
+            "payerFee":"5",
+            "payerFeeCurrency":"USD",
+            "payerQuoteCode":"null",
+            "amount":"319",
+            "currency":"USD",
+            "direction":"OUTGOING"
+        }]
+        for data in demo_data:      
+            data.update({"batch_id":self.id})
+
+            self.env["openg2p.detailed.payment.status"].create(data)
+        return 
+
         url = "http://ops-bk.ibank.financial/api/v1/batch/detail"
 
         params = (
-            ('batchId', str(self.transaction_batch_id)),
+            ('batchId', "c02a14f0-5e7e-44a1-88eb-5584a21e6f28"),
             ('pageNo', '0'),
             ('pageSize', '10'),
             ('status', 'ONGOING'),
@@ -316,6 +376,7 @@ class BatchTransaction(models.Model):
 
         response_json = response.json()
 
+        print(response_json)
         for details in response_json:
             beneficiary_id = details["id"]
 
