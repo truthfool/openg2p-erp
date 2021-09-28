@@ -108,7 +108,7 @@ class BatchTransaction(models.Model):
 
     total_transactions = fields.Char(string="Total Transactions", readonly=True)
 
-    ongoing = fields.Char(string="Ongoing", readonly=True)
+    ongoing = fields.Char(string="Reconcile", readonly=True)
 
     failed = fields.Char(string="Failed", readonly=True)
 
@@ -116,7 +116,7 @@ class BatchTransaction(models.Model):
 
     completed_amount = fields.Char(string="Completed Amount", readonly=True)
 
-    ongoing_amount = fields.Char(string="Ongoing Amount", readonly=True)
+    ongoing_amount = fields.Char(string="Reconciliation Amount", readonly=True)
 
     failed_amount = fields.Char(string="Failed Amount", readonly=True)
 

@@ -79,7 +79,8 @@
                                 <group string="Batch">
                                     <field name="detailed_status" nolabel="1">
                                         <tree editable="bottom">
-                                            <field name="currency"/>
+                                            <field name="beneficiary_id"/>
+                                            <field name="errorInformation"/>
                                             <field name="amount"/>
                                         </tree>
                                     </field>
