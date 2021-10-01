@@ -25,6 +25,10 @@
                                 <!-- <field name="state" invisible="1"/> -->
                                 <field name="amount"/>
                                 <field name="currency_id"/>
+                                <field name="national_id"/>
+                                <field name="phone"/>
+                                <field name="operator"/>
+                                <field name="payment_id"/>
 
                             </group>
                             <group name="secondary">

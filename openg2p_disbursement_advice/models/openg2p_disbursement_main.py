@@ -38,7 +38,22 @@ class DisbursementMain(models.Model):
     beneficiary_id = fields.Many2one(
         "openg2p.beneficiary", "Beneficiary", required=True
     )
-
+    national_id=fields.Char(
+        string="National ID",
+        related="beneficiary_id.national_id"
+    )
+    phone=fields.Char(
+        string="Primary No",
+        related="beneficiary_id.phone"
+    )
+    operator=fields.Char(
+        string="Mobile Money Operator",
+        default="m-PESA"
+    )
+    payment_id=fields.Char(
+        string="Payment ID",
+        compute="generate_paymentid"
+    )
     name = fields.Char(
         "Bank Account No.",
         related="bank_account_id.acc_number",
@@ -94,6 +109,11 @@ class DisbursementMain(models.Model):
         for rec in self:
             if not rec.beneficiary_request_id:
                 rec.beneficiary_request_id = uuid.uuid4().hex
+
+    def generate_paymentid(self):
+        for rec in self:
+            if not rec.payment_id:
+                rec.payment_id = self.name+"@"+self.operator
 
     @api.depends("bank_account_id")
     def _compute_acc_holder_name(self):
