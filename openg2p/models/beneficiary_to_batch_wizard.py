@@ -1,6 +1,7 @@
 from odoo import fields, models, api
 import uuid
 from datetime import datetime
+from odoo.exceptions import ValidationError, UserError
 
 
 class BeneficiaryTransactionWizard(models.TransientModel):
@@ -26,7 +27,6 @@ class BeneficiaryTransactionWizard(models.TransientModel):
         for b in beneficiaries:
             bank_id = self._get_bank_id(b)
             for program_id in b.program_ids.ids:
-
                 single = self.env["openg2p.disbursement.single.transaction"].create(
                     {
                         "bank_account_id": bank_id[0].id,
@@ -51,8 +51,12 @@ class BeneficiaryTransactionWizard(models.TransientModel):
         )
         program_wise = {}
         for b in beneficiaries_selected:
+
             if not b.bank_account_number:
-                continue
+                raise ValidationError(
+                    "One or more beneficiaries do not have bank account details"
+                )
+
             for program_id in b.program_ids.ids:
                 if program_id in program_wise.keys():
                     program_wise[program_id].append(b)
@@ -103,5 +107,9 @@ class BeneficiaryTransactionWizard(models.TransientModel):
                         }
                     )
                     m.generate_uuid()
+
+                # Emitting events for task
+                self.env["openg2p.workflow"].handle_tasks("batch_create", batch)
+
                 count += 1000
         return {"type": "ir.actions.act_window_close"}

@@ -52,7 +52,7 @@ class ODKSubmissions(models.Model):
 
     # Method responsible for getting new data from ODK
     def get_data_from_odk(self, odk_config):
-        odk_batch_id = uuid.uuid4().hex
+        self.odk_batch_id = uuid.uuid4().hex
 
         odk = ODK(
             odk_config.odk_endpoint,

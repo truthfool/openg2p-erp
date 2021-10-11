@@ -29,9 +29,9 @@ class Openg2pWorkflow(models.Model):
         res = super().create(vals_list)
         self.env["openg2p.task"].create(
             {
-                "type_id": 8,
-                "subtype_id": 34,
-                "entity_type_id": "openg2p.registration",
+                "type_id": 4,
+                "subtype_id": 15,
+                "entity_type_id": "openg2p.disbursement.batch.transaction",
                 "entity_id": 0,
                 "status_id": 1,
                 "workflow_id": res.id,
@@ -104,3 +104,37 @@ class Openg2pWorkflow(models.Model):
                         "workflow_id": task.workflow_id,
                     }
                 )
+        elif event_code == "batch_create":
+            task = self.env["openg2p.task"].search(
+                [
+                    "&",
+                    ("entity_type_id", "=", "openg2p.disbursement.batch.transaction"),
+                    ("entity_id", "=", 0),
+                ]
+            )
+
+            if task:
+                task.write(
+                    {
+                        "entity_id": obj.id,
+                        "status_id": 3,
+                        "target_url": f"http://localhost:8069/web#id={obj.id}&model=openg2p.disbursement.batch.transaction",
+                    }
+                )
+                self.env["openg2p.task"].create(
+                    {
+                        "type_id": 4,
+                        "subtype_id": 18,
+                        "entity_type_id": "openg2p.disbursement.batch.transaction",
+                        "entity_id": 0,
+                        "status_id": 1,
+                        "workflow_id": task.workflow_id,
+                    }
+                )
+
+    def api_json(self):
+        return {
+            "workflow-type": self.workflow_type.id,
+            "current-workflow-stage": self.curr_workflow_stage.id,
+            "workflow-completed": self.workflow_completed,
+        }

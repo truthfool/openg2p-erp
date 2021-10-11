@@ -200,7 +200,7 @@ class Registration(models.Model):
         default="none",
     )
 
-    odk_batch_id = fields.Char(default=uuid.uuid4)
+    odk_batch_id = fields.Char(default=lambda *args: uuid.uuid4().hex)
 
     # will be return registration details on api call
     def api_json(self):
