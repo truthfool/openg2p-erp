@@ -157,7 +157,7 @@ class BatchTransaction(models.Model):
         for rec in self:
             rec.state = "confirm"
             # Approving batch event
-            self.env["openg2p.workflow"].handle_tasks("batch_approve", rec.id)
+        self.env["openg2p.workflow"].handle_tasks("batch_approve", self)
 
     def action_pending(self):
         for rec in self:
@@ -266,7 +266,7 @@ class BatchTransaction(models.Model):
             print(e)
 
         # Emitting disbursement event
-        self.env["openg2p.workflow"].handle_tasks("batch_send",self.id)
+        self.env["openg2p.workflow"].handle_tasks("batch_send",self)
 
     def bulk_transfer_status(self):
         params = (
@@ -366,7 +366,7 @@ class BatchTransaction(models.Model):
             self.env["openg2p.detailed.payment.status"].create(data)
 
             # Emitting event for report
-            self.env["openg2p.workflow"].handle_tasks("complete_report",self.id)
+            self.env["openg2p.workflow"].handle_tasks("complete_report",self)
 
         return
 
