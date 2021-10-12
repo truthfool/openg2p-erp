@@ -44,6 +44,7 @@ class Openg2pWorkflow(models.Model):
             yield rec.id, f"{rec.workflow_type.name} ({rec.id})"
 
     def handle_tasks(self, event_code, obj):
+
         if event_code == "regd_create":
             task = self.env["openg2p.task"].search(
                 [
@@ -123,7 +124,7 @@ class Openg2pWorkflow(models.Model):
                 )
                 self.env["openg2p.task"].create(
                     {
-                        "type_id": 4,
+                        "type_id": 5,
                         "subtype_id": 18,
                         "entity_type_id": "openg2p.disbursement.batch.transaction",
                         "entity_id": 0,
@@ -131,6 +132,87 @@ class Openg2pWorkflow(models.Model):
                         "workflow_id": task.workflow_id,
                     }
                 )
+        elif event_code == "batch_approve":
+            task = self.env["openg2p.task"].search(
+                [
+                    "&",
+                    ("entity_type_id", "=", "openg2p.disbursement.batch.transaction"),
+                    ("entity_id", "=", 0),
+                ]
+            )
+
+            if task:
+                task.write(
+                    {
+                        "entity_id": obj.id,
+                        "status_id": 3,
+                        "target_url": f"http://localhost:8069/web#id={obj.id}&model=openg2p.disbursement.batch.transaction",
+                    }
+                )
+                self.env["openg2p.task"].create(
+                    {
+                        "type_id": 5,
+                        "subtype_id": 19,
+                        "entity_type_id": "openg2p.disbursement.batch.transaction",
+                        "entity_id": 0,
+                        "status_id": 1,
+                        "workflow_id": task.workflow_id,
+                    }
+                )
+        elif event_code == "batch_send":
+            task = self.env["openg2p.task"].search(
+                [
+                    "&",
+                    ("entity_type_id", "=", "openg2p.disbursement.batch.transaction"),
+                    ("entity_id", "=", 0),
+                ]
+            )
+
+            if task:
+                task.write(
+                    {
+                        "entity_id": obj.id,
+                        "status_id": 3,
+                        "target_url": f"http://localhost:8069/web#id={obj.id}&model=openg2p.disbursement.batch.transaction",
+                    }
+                )
+                self.env["openg2p.task"].create(
+                    {
+                        "type_id": 5,
+                        "subtype_id": 23,
+                        "entity_type_id": "openg2p.disbursement.batch.transaction",
+                        "entity_id": 0,
+                        "status_id": 1,
+                        "workflow_id": task.workflow_id,
+                    }
+                )
+            elif event_code == "complete_report":
+                task = self.env["openg2p.task"].search(
+                    [
+                        "&",
+                        ("entity_type_id", "=", "openg2p.disbursement.batch.transaction"),
+                        ("entity_id", "=", 0),
+                    ]
+                )
+
+                if task:
+                    task.write(
+                        {
+                            "entity_id": obj.id,
+                            "status_id": 3,
+                            "target_url": f"http://localhost:8069/web#id={obj.id}&model=openg2p.disbursement.batch.transaction",
+                        }
+                    )
+                    self.env["openg2p.task"].create(
+                        {
+                            "type_id": 5,
+                            "subtype_id": 24,
+                            "entity_type_id": "openg2p.disbursement.batch.transaction",
+                            "entity_id": 0,
+                            "status_id": 1,
+                            "workflow_id": task.workflow_id,
+                        }
+                    )
 
     def api_json(self):
         return {

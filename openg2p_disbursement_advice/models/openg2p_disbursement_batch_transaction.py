@@ -156,6 +156,8 @@ class BatchTransaction(models.Model):
     def action_confirm(self):
         for rec in self:
             rec.state = "confirm"
+            # Approving batch event
+            self.env["openg2p.workflow"].handle_tasks("batch_approve", rec.id)
 
     def action_pending(self):
         for rec in self:
@@ -263,6 +265,9 @@ class BatchTransaction(models.Model):
         except BaseException as e:
             print(e)
 
+        # Emitting disbursement event
+        self.env["openg2p.workflow"].handle_tasks("batch_send",self.id)
+
     def bulk_transfer_status(self):
         params = (
             ("batch_id", str(self.transaction_batch_id)),
@@ -295,69 +300,75 @@ class BatchTransaction(models.Model):
                 self.ongoing_amount = response_data["ongoing_amount"]
                 self.failed_amount = response_data["failed_amount"]
 
-                
+                # Emitting event for report
+                # self.env["openg2p.workflow"].handle_tasks("review_report")
+
                 self.create_detailed_status()
         except BaseException as e:
             print(e)
 
     def create_detailed_status(self):
-        demo_data=[{
-            "batch_id":"c02a14f0-5e7e-44a1-88eb-5584a21e6f28",
-            "beneficiary_id":"1",
-            "errorInformation":"Incorrect account details for transactionId: e5eea064-1445-4d32-bc55-bd9826c779a0",
-            "workflowInstanceKey":"22513",
-            "transactionId":"e5eea064-1445-4d32-bc55-bd9826c779a0",
-            "startedAt":"1629",
-            "completedAt":"162913",
-            "status":"IN_PROGRESS",
-            "statusDetail":"The transactions are in progress.",
-            "payeeDfspId":"g2p",
-            "payeePartyId":"9199",
-            "payeePartyIdType":"MSISDN",
-            "payeeFee":"5",
-            "payeeFeeCurrency":"SL",
-            "payeeQuoteCode":"",
-            "payerDfspId":"g2p",
-            "payerPartyId":"7543010",
-            "payerPartyIdType":"MSISDN",
-            "payerFee":"5",
-            "payerFeeCurrency":"USD",
-            "payerQuoteCode":"null",
-            "amount":"448",
-            "currency":"USD",
-            "direction":"OUTGOING"
+        demo_data = [{
+            "batch_id": "c02a14f0-5e7e-44a1-88eb-5584a21e6f28",
+            "beneficiary_id": "1",
+            "errorInformation": "Incorrect account details for transactionId: e5eea064-1445-4d32-bc55-bd9826c779a0",
+            "workflowInstanceKey": "22513",
+            "transactionId": "e5eea064-1445-4d32-bc55-bd9826c779a0",
+            "startedAt": "1629",
+            "completedAt": "162913",
+            "status": "IN_PROGRESS",
+            "statusDetail": "The transactions are in progress.",
+            "payeeDfspId": "g2p",
+            "payeePartyId": "9199",
+            "payeePartyIdType": "MSISDN",
+            "payeeFee": "5",
+            "payeeFeeCurrency": "SL",
+            "payeeQuoteCode": "",
+            "payerDfspId": "g2p",
+            "payerPartyId": "7543010",
+            "payerPartyIdType": "MSISDN",
+            "payerFee": "5",
+            "payerFeeCurrency": "USD",
+            "payerQuoteCode": "null",
+            "amount": "448",
+            "currency": "USD",
+            "direction": "OUTGOING"
 
         },
-        {
-            "beneficiary_id":"2",
-            "errorInformation":"Insufficient balance for transactionId: 3cc88b24-1df6-48e2-8b1f-5dbd02ba96b7",
-            "workflowInstanceKey":"2251799907439003",
-            "transactionId":"3cc88b24-1df6-48e2-8b1f-5dbd02ba96b7",
-            "startedAt":"1629130966000",
-            "completedAt":"1629130967000",
-            "status":"IN_PROGRESS",
-            "statusDetail":"The transactions are in progress.",
-            "payeeDfspId":"g2p",
-            "payeePartyId":"919900878571",
-            "payeePartyIdType":"MSISDN",
-            "payeeFee":"5",
-            "payeeFeeCurrency":"SL",
-            "payeeQuoteCode":"",
-            "payerDfspId":"g2p",
-            "payerPartyId":"7543010",
-            "payerPartyIdType":"MSISDN",
-            "payerFee":"5",
-            "payerFeeCurrency":"USD",
-            "payerQuoteCode":"null",
-            "amount":"319",
-            "currency":"USD",
-            "direction":"OUTGOING"
-        }]
-        for data in demo_data:      
-            data.update({"batch_id":self.id})
+            {
+                "beneficiary_id": "2",
+                "errorInformation": "Insufficient balance for transactionId: 3cc88b24-1df6-48e2-8b1f-5dbd02ba96b7",
+                "workflowInstanceKey": "2251799907439003",
+                "transactionId": "3cc88b24-1df6-48e2-8b1f-5dbd02ba96b7",
+                "startedAt": "1629130966000",
+                "completedAt": "1629130967000",
+                "status": "IN_PROGRESS",
+                "statusDetail": "The transactions are in progress.",
+                "payeeDfspId": "g2p",
+                "payeePartyId": "919900878571",
+                "payeePartyIdType": "MSISDN",
+                "payeeFee": "5",
+                "payeeFeeCurrency": "SL",
+                "payeeQuoteCode": "",
+                "payerDfspId": "g2p",
+                "payerPartyId": "7543010",
+                "payerPartyIdType": "MSISDN",
+                "payerFee": "5",
+                "payerFeeCurrency": "USD",
+                "payerQuoteCode": "null",
+                "amount": "319",
+                "currency": "USD",
+                "direction": "OUTGOING"
+            }]
+        for data in demo_data:
+            data.update({"batch_id": self.id})
 
             self.env["openg2p.detailed.payment.status"].create(data)
-        return 
+
+            # Emitting event for report
+            self.env["openg2p.workflow"].handle_tasks("complete_report",self.id)
+
+        return
 
         url = "http://ops-bk.ibank.financial/api/v1/batch/detail"
 

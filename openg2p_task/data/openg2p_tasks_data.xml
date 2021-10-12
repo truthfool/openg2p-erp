@@ -134,7 +134,7 @@
         </record>
         <record id="task_subtype_beneficiary_create_transaction_batch" model="openg2p.task.subtype">
             <field name="task_type_id" ref="task_type_beneficiary"/>
-            <field name="name">Make Batch Transaction</field>
+            <field name="name">Create Batch</field>
             <field name="role_id" ref="task_role_beneficiary_officer"/>
         </record>
         <record id="task_subtype_beneficiary_create_transaction_single" model="openg2p.task.subtype">
@@ -160,12 +160,12 @@
         </record>
         <record id="task_subtype_disbursement_create_batch" model="openg2p.task.subtype">
             <field name="task_type_id" ref="task_type_disbursement"/>
-            <field name="name">Create Disbursement Batch</field>
+            <field name="name">Approve Batch</field>
             <field name="role_id" ref="task_role_disbursement_officer"/>
         </record>
         <record id="task_subtype_disbursement_update_batch" model="openg2p.task.subtype">
             <field name="task_type_id" ref="task_type_disbursement"/>
-            <field name="name">Update Disbursement Batch</field>
+            <field name="name">Send Disbursement Batch</field>
             <field name="role_id" ref="task_role_disbursement_officer"/>
         </record>
         <record id="task_subtype_disbursement_create_single" model="openg2p.task.subtype">
