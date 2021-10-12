@@ -44,7 +44,6 @@ class Openg2pWorkflow(models.Model):
             yield rec.id, f"{rec.workflow_type.name} ({rec.id})"
 
     def handle_tasks(self, event_code, obj):
-
         if event_code == "regd_create":
             task = self.env["openg2p.task"].search(
                 [
