@@ -49,19 +49,32 @@ class BeneficiaryTransactionWizard(models.TransientModel):
         beneficiaries_selected = self.env["openg2p.beneficiary"].browse(
             self.env.context.get("active_ids")
         )
-        program_wise = {}
+        # program_wise = {}
+        batch_wise = {}
         for b in beneficiaries_selected:
 
             if not b.bank_account_number:
                 raise ValidationError(
                     "One or more beneficiaries do not have bank account details"
                 )
+            if b.batch_status:
+                raise ValidationError(
+                    "Beneficiary already under a batch"
+                )
 
-            for program_id in b.program_ids.ids:
-                if program_id in program_wise.keys():
-                    program_wise[program_id].append(b)
-                else:
-                    program_wise[program_id] = [b]
+            batch_id = b.odk_batch_id
+
+            if batch_id in batch_wise.keys():
+                program_wise = batch_wise[batch_id]
+                for program_id in b.program_ids.ids:
+                    if program_id in program_wise.keys():
+                        program_wise[program_id].append(b)
+                    else:
+                        program_wise[program_id] = [b]
+            else:
+                batch_wise[batch_id] = {
+                    program_id: [b] for program_id in b.program_ids.ids
+                }
 
         for program, beneficiaries in program_wise.items():
             request_id = uuid.uuid4().hex
@@ -71,15 +84,15 @@ class BeneficiaryTransactionWizard(models.TransientModel):
             while len(beneficiaries[count:]) > 0:
 
                 beneficiaries_list = beneficiaries[
-                    count : min(count + batch_size, len(beneficiaries))
-                ]
+                                     count: min(count + batch_size, len(beneficiaries))
+                                     ]
 
                 # Creating batch
                 batch = self.env["openg2p.disbursement.batch.transaction"].create(
                     {
                         "name": self.batch_name
-                        + "-"
-                        + str(datetime.now().strftime("%d-%m-%Y-%H:%M")),
+                                + "-"
+                                + str(datetime.now().strftime("%d-%m-%Y-%H:%M")),
                         "program_id": program,
                         "state": "draft",
                         "date_start": datetime.now(),

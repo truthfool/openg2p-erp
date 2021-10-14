@@ -14,7 +14,7 @@ class CronBatchCreation(models.Model):
 
     @api.multi
     def cron_create_batch(self):
-        #Fetching all beneficiaries those are not under any batch
+        # Fetching all beneficiaries those are not under any batch
         all_beneficiaries = self.env['openg2p.beneficiary'].search([("batch_status","=",False)])
 
         if not all_beneficiaries:

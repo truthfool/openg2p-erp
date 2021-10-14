@@ -80,7 +80,7 @@ class BatchTransaction(models.Model):
     )
     transaction_batch_id = fields.Char(readonly=True, string="Batch ID")
 
-    request_id = fields.Char(string="Request ID", compute="_generate_uuid", store=True)
+    request_id = fields.Char(string="Request ID", store=True)
 
     transaction_status = fields.Char(
         readonly=True,
@@ -167,13 +167,7 @@ class BatchTransaction(models.Model):
         for rec in self:
             rec.state = "paymentstatus"
 
-    def _generate_uuid(self):
-        for rec in self:
-            if not rec.request_id:
-                rec.request_id = uuid.uuid4().hex
-
     def create_bulk_transfer(self):
-        self._generate_uuid()
 
         limit = 100
         beneficiary_transactions = self.env["openg2p.disbursement.main"].search(

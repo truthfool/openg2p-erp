@@ -350,11 +350,11 @@ class Beneficiary(models.Model):
 
     # For checking if a beneficiary already sent under a batch
     batch_status = fields.Boolean(
-        string="Transaction Made or Not",
+        string="Under a Batch",
         default=False,
         track_visibility="onchange",
     )
-    odk_batch_id = fields.Char(default=uuid.uuid4)
+
     odk_batch_id = fields.Char(default=lambda *args: uuid.uuid4().hex)
 
     def api_json(self):
@@ -724,9 +724,10 @@ class Beneficiary(models.Model):
         res = super(Beneficiary, self).write(vals)
         for i in self:
             i._partner_update(vals)
-        self.env["openg2p.task"].create_task_from_notification(
-            "beneficiary_update", self.id
-        )
+
+        # self.env["openg2p.task"].create_task_from_notification(
+        #     "beneficiary_update", self.id
+        # )
         return res
 
     @api.onchange("country_id")

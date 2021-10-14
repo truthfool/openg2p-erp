@@ -69,6 +69,7 @@
                     <field name="category_id" widget="many2many_tags"
                            options="{'color_field': 'color', 'no_create_edit': True}"
                            placeholder="Tags..."/>
+                    <field name="batch_status"/>
                     <field name="regression_and_progression" string="Regression &amp; Progression (A)"/>
                     <field name="total_quality" string="Total Quality (B)"/>
                     <field name="total_equity" string="Total Equity (C)"/>
@@ -150,6 +151,9 @@
                                 <field name="total_quality" string="Total Quality (B)"/>
                                 <field name="total_equity" string="Total Equity (C)"/>
                                 <field name="grand_total" string="Grand Total (LE)"/>
+                            </group>
+                            <group string="Batch Status">
+                                <field name="batch_status" readonly="False"/>
                             </group>
                         </group>
                         <notebook colspan="4">
