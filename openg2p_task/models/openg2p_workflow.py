@@ -1,4 +1,5 @@
 from odoo import models, fields, api
+from .task_email import send_mail
 
 
 class Openg2pWorkflow(models.Model):
@@ -102,6 +103,7 @@ class Openg2pWorkflow(models.Model):
                         "entity_id": 0,
                         "status_id": 1,
                         "workflow_id": task.workflow_id,
+                        "description":str(obj.name)
                     }
                 )
         elif event_code == "batch_create":
@@ -121,7 +123,7 @@ class Openg2pWorkflow(models.Model):
                         "target_url": f"http://localhost:8069/web#id={obj.id}&model=openg2p.disbursement.batch.transaction",
                     }
                 )
-                self.env["openg2p.task"].create(
+                task = self.env["openg2p.task"].create(
                     {
                         "type_id": 5,
                         "subtype_id": 18,
@@ -129,8 +131,12 @@ class Openg2pWorkflow(models.Model):
                         "entity_id": 0,
                         "status_id": 1,
                         "workflow_id": task.workflow_id,
+                        "description": str(obj.name)
                     }
                 )
+                send_mail(task.assignee_id.name, "ishanranasingh1@gmail.com",
+                          f"http://localhost:8069/web#id={obj.id}&model=openg2p.disbursement.batch.transaction")
+
         elif event_code == "batch_approve":
             task = self.env["openg2p.task"].search(
                 [
@@ -148,7 +154,7 @@ class Openg2pWorkflow(models.Model):
                         "target_url": f"http://localhost:8069/web#id={obj.id}&model=openg2p.disbursement.batch.transaction",
                     }
                 )
-                self.env["openg2p.task"].create(
+                task = self.env["openg2p.task"].create(
                     {
                         "type_id": 5,
                         "subtype_id": 19,
@@ -156,8 +162,11 @@ class Openg2pWorkflow(models.Model):
                         "entity_id": 0,
                         "status_id": 1,
                         "workflow_id": task.workflow_id,
+                        "description": str(obj.name)
                     }
                 )
+                send_mail(task.assignee_id.name, "ishanranasingh1@gmail.com",
+                          f"http://localhost:8069/web#id={obj.id}&model=openg2p.disbursement.batch.transaction")
         elif event_code == "batch_send":
             task = self.env["openg2p.task"].search(
                 [
@@ -175,7 +184,7 @@ class Openg2pWorkflow(models.Model):
                         "target_url": f"http://localhost:8069/web#id={obj.id}&model=openg2p.disbursement.batch.transaction",
                     }
                 )
-                self.env["openg2p.task"].create(
+                task = self.env["openg2p.task"].create(
                     {
                         "type_id": 5,
                         "subtype_id": 23,
@@ -183,8 +192,11 @@ class Openg2pWorkflow(models.Model):
                         "entity_id": 0,
                         "status_id": 1,
                         "workflow_id": task.workflow_id,
+                        "description": str(obj.name)
                     }
                 )
+                send_mail(task.assignee_id.name, "ishanranasingh1@gmail.com",
+                          f"http://localhost:8069/web#id={obj.id}&model=openg2p.disbursement.batch.transaction")
             elif event_code == "complete_report":
                 task = self.env["openg2p.task"].search(
                     [
@@ -200,16 +212,6 @@ class Openg2pWorkflow(models.Model):
                             "entity_id": obj.id,
                             "status_id": 3,
                             "target_url": f"http://localhost:8069/web#id={obj.id}&model=openg2p.disbursement.batch.transaction",
-                        }
-                    )
-                    self.env["openg2p.task"].create(
-                        {
-                            "type_id": 5,
-                            "subtype_id": 24,
-                            "entity_type_id": "openg2p.disbursement.batch.transaction",
-                            "entity_id": 0,
-                            "status_id": 1,
-                            "workflow_id": task.workflow_id,
                         }
                     )
 

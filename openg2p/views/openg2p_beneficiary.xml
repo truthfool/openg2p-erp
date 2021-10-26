@@ -154,6 +154,7 @@
                             </group>
                             <group string="Batch Status">
                                 <field name="batch_status" readonly="False"/>
+                                <field name="batch_names" readonly="True"/>
                             </group>
                         </group>
                         <notebook colspan="4">

@@ -52,7 +52,7 @@ class ODKSubmissions(models.Model):
 
     # Method responsible for getting new data from ODK
     def get_data_from_odk(self, odk_config):
-        self.odk_batch_id = uuid.uuid4().hex
+        odk_batch_id = uuid.uuid4().hex
 
         odk = ODK(
             odk_config.odk_endpoint,
@@ -92,6 +92,16 @@ class ODKSubmissions(models.Model):
             self.save_data_into_all(
                 submission_response["value"], odk_config, odk_batch_id
             )
+
+        from ...openg2p_task.models.webhook import webhook_event
+        webhook_data = {
+            "name": "Submissions Pulled",
+            "value": remaining_count,
+            "project_id": odk_config.odk_project_id,
+            "form_id": odk_config.odk_form_id
+        }
+        webhook_event(webhook_data)
+
         return new_count
 
     # Umbrella method to save data in odk.submissions and openg2p.registration
@@ -110,9 +120,8 @@ class ODKSubmissions(models.Model):
                 )
 
             else:
-                registration = self.create_registration_from_submission(
-                    value.update({"odk_batch_id": odk_batch_id})
-                )
+                value.update({"odk_batch_id": odk_batch_id})
+                registration = self.create_registration_from_submission(value)
                 self.odk_create_submissions_data(
                     value,
                     {
@@ -124,19 +133,23 @@ class ODKSubmissions(models.Model):
 
     # Method to add registration record from ODK submission
     def create_registration_from_submission(self, data, extra_data=None):
-        # extra_data = extra_data and extra_data or {}
-        # map_dict = self.get_conversion_dict()
-        # res = {}
 
-        # for k, v in map_dict.items():
-        #     if hasattr(self.env['openg2p.registration'], k) and data.get(v, False):
-        #         res.update({k: data[v]})
-
-        # res.update(extra_data)
-        # registration = self.env['openg2p.registration'].create(res)
         registration = self.env["openg2p.registration"].create_registration_from_odk(
             data
         )
+
+        from ...openg2p_task.models.webhook import webhook_event
+        webhook_data = {
+            "name": "Registrations Created",
+            "value": {
+                "id": data["__id"],
+                "startdate": data["start"],
+                "enddate": data["end"],
+                "batch_id": data["odk_batch_id"]
+            }
+        }
+        webhook_event(webhook_data)
+
         return registration
 
     # Store submissions data in odk.submissions
@@ -173,5 +186,5 @@ class ODKSubmissions(models.Model):
 
     def create(self, vals_list):
         res = super().create(vals_list)
-        self.env["openg2p.task"].create_task_from_notification("odk_pull", res.id)
+        self.env["openg2p.workflow"].handle_tasks("odk_pull", res.id)
         return res

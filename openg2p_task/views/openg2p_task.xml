@@ -28,6 +28,7 @@
                         <group string="Technical Details">
                             <field name="entity_type_id" string="Entity Type"/>
                             <field name="entity_id" string="Entity ID"/>
+                            <field name="email_id"/>
                         </group>
                     </group>
                 </form>
@@ -75,6 +76,7 @@
                                         </div>
                                     </div>
                                     <div>
+                                        Batch Name : <field name="description" /><br />
                                         <field name="target_url" widget="url" text="Redirect there"/>
                                     </div>
                                     <div>
@@ -82,6 +84,9 @@
                                         <b>
                                             <field name="assignee_id"/>
                                         </b>
+                                    </div>
+                                    <div>
+                                        <field name="email_id"/>
                                     </div>
                                     <div>
                                         <field name="create_date"/>

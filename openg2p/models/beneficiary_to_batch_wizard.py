@@ -49,18 +49,26 @@ class BeneficiaryTransactionWizard(models.TransientModel):
         beneficiaries_selected = self.env["openg2p.beneficiary"].browse(
             self.env.context.get("active_ids")
         )
-        # program_wise = {}
+
         batch_wise = {}
+
         for b in beneficiaries_selected:
 
             if not b.bank_account_number:
                 raise ValidationError(
                     "One or more beneficiaries do not have bank account details"
                 )
+
             if b.batch_status:
                 raise ValidationError(
                     "Beneficiary already under a batch"
                 )
+
+            # Storing according to batch ID's
+            # batch_wise={
+            #     'batchid1':
+            #         'programid':[b1,b2,b3.....]
+            # }
 
             batch_id = b.odk_batch_id
 
@@ -76,16 +84,13 @@ class BeneficiaryTransactionWizard(models.TransientModel):
                     program_id: [b] for program_id in b.program_ids.ids
                 }
 
-        for program, beneficiaries in program_wise.items():
-            request_id = uuid.uuid4().hex
-            batch_size = 1000
-            count = 0
+        for batch_id in batch_wise:
+            request_id = batch_id
 
-            while len(beneficiaries[count:]) > 0:
+            beneficiaries_list = []
 
-                beneficiaries_list = beneficiaries[
-                                     count: min(count + batch_size, len(beneficiaries))
-                                     ]
+            for program_id in batch_wise[batch_id]:
+                beneficiaries_list = batch_wise[batch_id][program_id]
 
                 # Creating batch
                 batch = self.env["openg2p.disbursement.batch.transaction"].create(
@@ -93,7 +98,7 @@ class BeneficiaryTransactionWizard(models.TransientModel):
                         "name": self.batch_name
                                 + "-"
                                 + str(datetime.now().strftime("%d-%m-%Y-%H:%M")),
-                        "program_id": program,
+                        "program_id": program_id,
                         "state": "draft",
                         "date_start": datetime.now(),
                         "date_end": datetime.now(),
@@ -115,7 +120,7 @@ class BeneficiaryTransactionWizard(models.TransientModel):
                             "program_id": b.program_ids.ids[0],
                             "date_start": datetime.now(),
                             "date_end": datetime.now(),
-                            "currency_id": bank_id[0].currency_id,
+                            "currency_id": bank_id[0].currency_id.id,
                             "payment_mode": bank_id[0].payment_mode,
                         }
                     )
@@ -124,5 +129,8 @@ class BeneficiaryTransactionWizard(models.TransientModel):
                 # Emitting events for task
                 self.env["openg2p.workflow"].handle_tasks("batch_create", batch)
 
-                count += 1000
+        # Changing batch status of records true
+        for beneficiary in beneficiaries_selected:
+            beneficiary.batch_status = True
+
         return {"type": "ir.actions.act_window_close"}

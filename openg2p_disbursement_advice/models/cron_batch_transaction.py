@@ -21,77 +21,83 @@ class CronBatchTransaction(models.Model):
             self.create_bulk_transfer_cron(batch)
 
     def create_bulk_transfer_cron(self,batch):
-    
-        batch._generate_uuid()
 
-        limit = 100
         beneficiary_transactions = self.env["openg2p.disbursement.main"].search(
-            [("batch_id", "=", batch.batch_id)], limit=limit
+            [("batch_id", "=", batch.id)]
         )
-
-        offset = 0
 
         # CSV filename as RequestID+Datetime
         csvname = (
-            batch.request_id
-            + "-"
-            + str(datetime.now().strftime(r"%Y%m%d%H%M%S"))
-            + ".csv"
+                self.request_id
+                + "-"
+                + str(datetime.now().strftime(r"%d-%m-%Y-%H:%M"))
+                + ".csv"
         )
 
-        while len(beneficiary_transactions) > 0:
+        with open(csvname, "a") as csvfile:
+            csvwriter = csv.writer(csvfile)
+            entry = [
+                "id",
+                "request_id",
+                "payment_mode",
+                "amount",
+                "currency",
+                "note",
+            ]
+            csvwriter.writerow(entry)
 
-            with open(csvname, "a") as csvfile:
-                csvwriter = csv.writer(csvfile)
-                for rec in beneficiary_transactions:
-                    entry = [
-                        rec.id,
-                        rec.beneficiary_request_id,
-                        rec.payment_mode,
-                        rec.name,
-                        rec.acc_holder_name,
-                        rec.amount,
-                        rec.currency_id.name,
-                        rec.note
-                    ]
+            for rec in beneficiary_transactions:
+                entry = [
+                    rec.id,
+                    rec.beneficiary_request_id,
+                    "gsma",  # rec.payment_mode or "gsma",
+                    rec.amount,
+                    "LE",  # rec.currency_id.name,
+                    rec.note,
+                ]
 
-                    # id,request_id,payment_mode,acc_number,acc_holder_name,amount,currency,note
-                    beneficiary_transaction_records = []
-                    beneficiary_transaction_records.append(entry)
-                    csvwriter.writerows(
-                        map(lambda x: [x], beneficiary_transaction_records)
-                    )
+                # id,request_id,payment_mode,amount,currency,note
+                csvwriter.writerow(entry)
 
-            offset += len(beneficiary_transactions)
+        url_token = "http://ops-bk.ibank.financial/oauth/token?grant_type=client_credentials"
 
-            if len(beneficiary_transactions) < limit:
-                break
-            beneficiary_transactions = self.env["openg2p.disbursement.main"].search(
-                [("batch_id", "=", batch.batch_id)], limit=limit, offset=offset
-            )
-
-        # Uploading to AWS bucket
-        uploaded = batch.upload_to_aws(csvname, "paymenthub-ee-dev")
-        
-        headers = {
+        headers_token = {
             'Platform-TenantId': 'ibank-usa',
+            'Authorization': 'Basic Y2hhbm5lbC1pYmFuay11c2E6cDEyMzQ='
         }
-        files = {
-            "data": (csvname, open(csvname, "rb")),
-            "request_id": (None, str(batch.request_id)),
-            "note": (None, "Bulk transfers"),
-            # "checksum": (None, str(batch.generate_hash(csvname))),
-        }
-
-        url="http://channel.ibank.financial/channel/bulk/transfer"
 
         try:
-            response = requests.post(url, headers=headers, files=files)
-            response_data = response.json()
-            
-            self.transaction_status = response_data["status"]
-            self.transaction_batch_id = response_data["batch_id"]
+            response_token = requests.request("POST", url_token, headers=headers_token)
+
+            response_token_data = response_token.json()
+            batch.token_response = response_token_data["access_token"]
 
         except BaseException as e:
-            return e
+            print(e)
+
+        # Uploading to AWS bucket
+        uploaded = self.upload_to_aws(csvname, "paymenthub-ee-dev")
+
+        headers = {"Platform-TenantId": "ibank-usa"}
+
+        files = {
+            "data": (csvname, open(csvname, "rb"), "text/csv"),
+            "requestId": (None, str(batch.request_id)),
+            "purpose": (None, "Bulk transfers"),
+            # "checksum": (None, str(self.generate_hash(csvname))),
+        }
+        url = "http://channel.ibank.financial/channel/bulk/transfer"
+
+        try:
+            response = requests.post(url, files=files)
+            response_data = response.json()
+
+            batch.transaction_status = "queued"
+            batch.transaction_batch_id = "c02a14f0-5e7e-44a1-88eb-5584a21e6f28"
+
+        except BaseException as e:
+            print(e)
+
+        # Emitting disbursement event
+        # self.env["openg2p.workflow"].handle_tasks("batch_send", self)
         

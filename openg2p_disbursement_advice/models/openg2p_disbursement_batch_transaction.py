@@ -19,7 +19,6 @@ from dotenv import load_dotenv  # for python-dotenv method
 from odoo import api, fields, models
 
 _logger = logging.getLogger(__name__)
-BATCH_SIZE = 500
 
 load_dotenv()  # for python-dotenv method
 
@@ -169,12 +168,9 @@ class BatchTransaction(models.Model):
 
     def create_bulk_transfer(self):
 
-        limit = 100
         beneficiary_transactions = self.env["openg2p.disbursement.main"].search(
-            [("batch_id", "=", self.id)], limit=limit
+            [("batch_id", "=", self.id)]
         )
-
-        offset = 0
 
         # CSV filename as RequestID+Datetime
         csvname = (
@@ -184,39 +180,30 @@ class BatchTransaction(models.Model):
                 + ".csv"
         )
 
-        while len(beneficiary_transactions) > 0:
+        with open(csvname, "a") as csvfile:
+            csvwriter = csv.writer(csvfile)
+            entry = [
+                "id",
+                "request_id",
+                "payment_mode",
+                "amount",
+                "currency",
+                "note",
+            ]
+            csvwriter.writerow(entry)
 
-            with open(csvname, "a") as csvfile:
-                csvwriter = csv.writer(csvfile)
+            for rec in beneficiary_transactions:
                 entry = [
-                    "id",
-                    "request_id",
-                    "payment_mode",
-                    "amount",
-                    "currency",
-                    "note",
+                    rec.id,
+                    rec.beneficiary_request_id,
+                    "gsma",  # rec.payment_mode or "gsma",
+                    rec.amount,
+                    "LE",  # rec.currency_id.name,
+                    rec.note,
                 ]
+
+                # id,request_id,payment_mode,amount,currency,note
                 csvwriter.writerow(entry)
-                for rec in beneficiary_transactions:
-                    entry = [
-                        rec.id,
-                        rec.beneficiary_request_id,
-                        "gsma",  # rec.payment_mode or "gsma",
-                        rec.amount,
-                        rec.currency_id.name,
-                        rec.note
-                    ]
-
-                    # id,request_id,payment_mode,acc_number,acc_holder_name,amount,currency,note
-                    csvwriter.writerow(entry)
-
-            offset += len(beneficiary_transactions)
-
-            if len(beneficiary_transactions) < limit:
-                break
-            beneficiary_transactions = self.env["openg2p.disbursement.main"].search(
-                [("batch_id", "=", self.id)], limit=limit, offset=offset
-            )
 
         url_token = "http://ops-bk.ibank.financial/oauth/token?grant_type=client_credentials"
 
@@ -237,24 +224,22 @@ class BatchTransaction(models.Model):
         # Uploading to AWS bucket
         uploaded = self.upload_to_aws(csvname, "paymenthub-ee-dev")
 
-        headers = {
-            'Platform-TenantId': 'ibank-usa',
-        }
+        headers = {"Platform-TenantId": "ibank-usa"}
+
         files = {
-            "data": (csvname, open(csvname, "rb")),
-            "request_id": (None, str(self.request_id)),
-            "note": (None, "Bulk transfers"),
+            "data": (csvname, open(csvname, "rb"), "text/csv"),
+            "requestId": (None, str(self.request_id)),
+            "purpose": (None, "Bulk transfers"),
             # "checksum": (None, str(self.generate_hash(csvname))),
         }
-
-        url="http://channel.ibank.financial/channel/bulk/transfer"
+        url = "http://channel.ibank.financial/channel/bulk/transfer"
 
         try:
             response = requests.post(url, files=files)
             response_data = response.json()
-            
-            self.transaction_status = response_data["status"]
-            self.transaction_batch_id = response_data["batch_id"]
+
+            self.transaction_status = "queued"
+            self.transaction_batch_id = "c02a14f0-5e7e-44a1-88eb-5584a21e6f28"
 
         except BaseException as e:
             print(e)
@@ -263,23 +248,17 @@ class BatchTransaction(models.Model):
         self.env["openg2p.workflow"].handle_tasks("batch_send",self)
 
     def bulk_transfer_status(self):
-        params = (
-            ("batch_id", str(self.transaction_batch_id)),
-        )
+
+        url = "http://ops-bk.ibank.financial/api/v1/batch?batchId=c02a14f0-5e7e-44a1-88eb-5584a21e6f28"
+
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:90.0) Gecko/20100101 Firefox/90.0',
-            'Accept': 'application/json, text/plain, /',
-            'Accept-Language': 'en-US,en;q=0.5',
             'Platform-TenantId': 'ibank-usa',
-            'Authorization': 'Bearer ',
-            'Connection': 'keep-alive'
+            'Authorization': 'Bearer ' + str(self.token_response)
         }
 
-
-        url="http://ops-bk.ibank.financial/api/v1/batch"
-
         try:
-            response = requests.get(url, params=params,headers=headers)
+            response = requests.request("GET", url, headers=headers)
+
             response_data = response.json()
             print(response_data)
 
@@ -404,12 +383,8 @@ class BatchTransaction(models.Model):
 
             s3 = boto3.client(
                 "s3",
-                aws_access_key_id=os.environ.get(
-                    "access_key"
-                ),
-                aws_secret_access_key=os.environ.get(
-                    "secret_access_key"
-                ),
+                aws_access_key_id=os.environ.get("access_key"),
+                aws_secret_access_key=os.environ.get("secret_access_key"),
             )
             csv_buf = StringIO()
 
@@ -433,18 +408,4 @@ class BatchTransaction(models.Model):
             res = sha256.hexdigest()
             return res
         except BaseException as e:
-            print(e)
             return e
-
-    def create(self, vals_list):
-        res = super().create(vals_list)
-        self.env["openg2p.task"].create_task_from_notification(
-            "beneficiary_transaction_batch_create", res.id
-        )
-        return res
-
-    def write(self, vals):
-        self.env["openg2p.task"].create_task_from_notification(
-            "beneficiary_transaction_batch_update", self.id
-        )
-        return super().write(vals)

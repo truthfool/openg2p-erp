@@ -63,6 +63,14 @@ class Openg2pTask(models.Model):
         string="Last modified by",
         default=lambda self: self.env.uid,
     )
+    email_id = fields.Text(
+        compute='get_email',
+        store=False
+    )
+
+    def get_email(self):
+        for res in self:
+            res.email_id = res.createdby_id.email
 
     @api.depends("subtype_id")
     def _compute_task_type(self):

@@ -237,15 +237,15 @@ class Beneficiary(models.Model):
         "Medium-sized image",
         attachment=True,
         help="Medium-sized image of this beneficiary. It is automatically "
-        "resized as a 128x128px image, with aspect ratio preserved. "
-        "Use this field in form views or some kanban views.",
+             "resized as a 128x128px image, with aspect ratio preserved. "
+             "Use this field in form views or some kanban views.",
     )
     image_small = fields.Binary(
         "Small-sized image",
         attachment=True,
         help="Small-sized image of this beneficiary. It is automatically "
-        "resized as a 64x64px image, with aspect ratio preserved. "
-        "Use this field anywhere a small image is required.",
+             "resized as a 64x64px image, with aspect ratio preserved. "
+             "Use this field anywhere a small image is required.",
     )
     location_id = fields.Many2one(
         "openg2p.location",
@@ -287,7 +287,7 @@ class Beneficiary(models.Model):
         index=True,
         context={"active_test": False},
         help="Duplicate records that have been merged with this."
-        " Primary function is to allow to reference of merged records ",
+             " Primary function is to allow to reference of merged records ",
     )
     org_custom_field = fields.One2many(
         "openg2p.beneficiary.orgmap",
@@ -350,12 +350,27 @@ class Beneficiary(models.Model):
 
     # For checking if a beneficiary already sent under a batch
     batch_status = fields.Boolean(
-        string="Under a Batch",
+        string="Batch",
         default=False,
         track_visibility="onchange",
     )
 
+    # UUID
     odk_batch_id = fields.Char(default=lambda *args: uuid.uuid4().hex)
+
+    # Names of batches
+    batch_names = fields.Text(
+        string="Batch Name",
+        compute="_get_all_batch_names",
+        default="",
+    )
+
+    def _get_all_batch_names(self):
+        all_ben = self.env["openg2p.disbursement.main"].search(
+            [("beneficiary_id", "=", self.id)])
+
+        for b in all_ben:
+            self.batch_names = b.batch_id.name + "\n"
 
     def api_json(self):
         return {
@@ -713,9 +728,9 @@ class Beneficiary(models.Model):
             vals["phone"] = vals.get("mobile")
         self._partner_create(vals)
         res = super(Beneficiary, self).create(vals)
-        self.env["openg2p.task"].create_task_from_notification(
-            "beneficiary_create", res.id
-        )
+        # self.env["openg2p.task"].create_task_from_notification(
+        #     "beneficiary_create", res.id
+        # )
         return res
 
     @api.multi
@@ -1109,7 +1124,7 @@ class Beneficiary(models.Model):
 
     @api.model
     def matches(
-        self, query, mode=MATCH_MODE_NORMAL, stop_on_first=False, threshold=None
+            self, query, mode=MATCH_MODE_NORMAL, stop_on_first=False, threshold=None
     ):
         """
         Given an query find recordset that is strongly similar
