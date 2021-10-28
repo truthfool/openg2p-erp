@@ -2,69 +2,65 @@
 <odoo>
 
     <menuitem id="menu_openg2p_task_home"
-              name="OpenG2P Task"
+              name="Task"
               action="action_openg2p_task"
-              sequence="1"/>
-
-    <menuitem id="menu_openg2p_webhook"
-              name="OpenG2P Webhooks"
-              action="action_openg2p_webhook"
-              parent="menu_openg2p_task_home"
-              sequence="2"/>
+              sequence="1"
+              web_icon="openg2p_task,static/description/icon.png" />
 
 
     <menuitem id="menu_openg2p_task_history"
-              name="OpenG2P Task History"
+              name="Task History"
               action="action_openg2p_task_history"
               parent="menu_openg2p_task_home"
-              sequence="3"/>
+              sequence="2"/>
 
 
     <menuitem id="menu_openg2p_task_others"
               name="Additional Options"
               parent="menu_openg2p_task_home"
-              sequence="4"/>
+              sequence="3"/>
 
     <menuitem id="menu_openg2p_task_type"
-              name="OpenG2P Task Type"
+              name="Task Type"
               action="action_openg2p_task_type"
+              parent="menu_openg2p_task_others"
+              sequence="4"/>
+
+    <menuitem id="menu_openg2p_task_role"
+              name="Task Role"
+              action="action_openg2p_task_role"
               parent="menu_openg2p_task_others"
               sequence="5"/>
 
-    <menuitem id="menu_openg2p_task_role"
-              name="OpenG2P Task Role"
-              action="action_openg2p_task_role"
+    <menuitem id="menu_openg2p_task_subtype"
+              name="Task Subtype"
+              action="action_openg2p_task_subtype"
               parent="menu_openg2p_task_others"
               sequence="6"/>
 
-    <menuitem id="menu_openg2p_task_subtype"
-              name="OpenG2P Task Subtype"
-              action="action_openg2p_task_subtype"
-              parent="menu_openg2p_task_others"
-              sequence="7"/>
-
-
-    <menuitem id="menu_openg2p_workflow_options"
-              name="Workflow Options"
+    <menuitem id="menu_openg2p_custom_tasks"
+              name="Custom tasks"
               parent="menu_openg2p_task_home"
-              sequence="8"/>
-
-    <menuitem id="menu_openg2p_workflow_stage"
-              name="OpenG2P Workflow Stage"
-              action="action_openg2p_workflow_stage"
-              parent="menu_openg2p_workflow_options"
-              sequence="9"/>
-
-    <menuitem id="menu_openg2p_workflow_type"
-              name="OpenG2P Workflow Type"
-              action="action_openg2p_workflow_type"
-              parent="menu_openg2p_workflow_options"
-              sequence="10"/>
-
-    <menuitem id="menu_openg2p_workflow"
-              name="OpenG2P Workflow"
-              action="action_openg2p_workflow"
-              parent="menu_openg2p_workflow_options"
               sequence="11"/>
+
+    <menuitem id="menu_openg2p_task_regdchangestage"
+              name="Change stage of Registrations"
+              parent="menu_openg2p_custom_tasks"
+              action="action_openg2p_task_regdchangestage"
+              sequence="11"/>
+
+    <menuitem id="menu_openg2p_task_regd2bene"
+              name="Convert Registrations to Beneficiaries"
+              parent="menu_openg2p_custom_tasks"
+              action="action_openg2p_task_regd2bene"
+              sequence="11"/>
+
+    <menuitem id="menu_openg2p_task_enrollbene"
+              name="Enroll Beneficiaries into program"
+              parent="menu_openg2p_custom_tasks"
+              action="action_openg2p_task_enrollbene"
+              sequence="11"/>
+
+
 
 </odoo>

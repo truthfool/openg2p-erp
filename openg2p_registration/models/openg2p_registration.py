@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
-import json
 import uuid
 
-import requests
 from odoo.addons.openg2p.services.matching_service import (
     MATCH_MODE_COMPREHENSIVE,
 )
@@ -504,11 +502,11 @@ class Registration(models.Model):
                 "lastname": "_",
                 "street": (temp["chiefdom"] if "chiefdom" in temp.keys() else "-"),
                 "street2": (temp["district"] if "district" in temp.keys() else "-")
-                           + ", "
-                           + (temp["region"] if "region" in temp.keys() else "-"),
+                + ", "
+                + (temp["region"] if "region" in temp.keys() else "-"),
                 "city": (
-                        (temp["city"] if "city" in temp.keys() else "Freetown")
-                        or "Freetown"
+                    (temp["city"] if "city" in temp.keys() else "Freetown")
+                    or "Freetown"
                 )
                 if "city" in temp.keys()
                 else "Freetown",
@@ -535,23 +533,23 @@ class Registration(models.Model):
                     org_data[k] = v
                     continue
                 if (
-                        k
-                        in [
-                    "Status",
-                    "AttachmentsExpected",
-                    "AttachmentsPresent",
-                    "SubmitterName",
-                    "SubmitterID",
-                    "KEY",
-                    "meta-instanceID",
-                    "__version__",
-                    "bank_name",
-                    "city",
-                    "district",
-                    "chiefdom",
-                    "region",
-                ]
-                        or k.startswith("_")
+                    k
+                    in [
+                        "Status",
+                        "AttachmentsExpected",
+                        "AttachmentsPresent",
+                        "SubmitterName",
+                        "SubmitterID",
+                        "KEY",
+                        "meta-instanceID",
+                        "__version__",
+                        "bank_name",
+                        "city",
+                        "district",
+                        "chiefdom",
+                        "region",
+                    ]
+                    or k.startswith("_")
                 ):
                     continue
                 if k == "bank_account_number":
@@ -870,6 +868,7 @@ class Registration(models.Model):
             "emergency_contact": self.emergency_contact,
             "emergency_phone": self.emergency_phone,
             "odk_batch_id": self.odk_batch_id,
+            "program_ids": self.program_ids.ids,
         }
         beneficiary = self.env["openg2p.beneficiary"].create(data)
         org_fields = self.env["openg2p.registration.orgmap"].search(
@@ -1116,6 +1115,11 @@ class Registration(models.Model):
             elif isinstance(value, dict):
                 self.del_none(value)
         return d
+
+    def task_convert_registration_to_beneficiary(self):
+        self.stage_id = 6
+        self.active = False
+        return self.create_beneficiary_from_registration()["res_id"]
 
     @api.multi
     def archive_registration(self):

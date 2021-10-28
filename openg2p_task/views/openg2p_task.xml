@@ -14,8 +14,7 @@
                             <field name="subtype_id" string="Task Subtype"/>
                             <field name="description" string="Description"/>
                             <field name="context" string="Context"/>
-                            <field name="workflow_id" string="Workflow Pid"/>
-                            <field name="target_url" string="Target URL"/>
+                            <field name="process_id" string="process Pid"/>
                             <field name="assignee_id" string="Assignee"/>
                             <field name="lastmodifiedby_id" string="Last modified by"/>
                         </group>
@@ -26,9 +25,7 @@
                             <field name="write_date" string="Last Modified Date"/>
                         </group>
                         <group string="Technical Details">
-                            <field name="entity_type_id" string="Entity Type"/>
                             <field name="entity_id" string="Entity ID"/>
-                            <field name="email_id"/>
                         </group>
                     </group>
                 </form>
@@ -58,7 +55,6 @@
                 <kanban default_group_by="status_id" class="o_kanban_registration" delete="0" import="0"
                         group_create="0" quick_create="false" group_edit="false" group_delete="false"
                         group_fold="false">
-                    <field name="target_url"/>
                     <field name="assignee_id"/>
                     <field name="status_id"/>
                     <progressbar field="status_id"
@@ -76,20 +72,18 @@
                                         </div>
                                     </div>
                                     <div>
-                                        Batch Name : <field name="description" /><br />
-                                        <field name="target_url" widget="url" text="Redirect there"/>
-                                    </div>
-                                    <div>
                                         Assigned to:
                                         <b>
                                             <field name="assignee_id"/>
                                         </b>
                                     </div>
                                     <div>
-                                        <field name="email_id"/>
-                                    </div>
-                                    <div>
                                         <field name="create_date"/>
+                                    </div>
+                                    <br />
+                                    <div>
+                                        <button name="target_url_button" type="object"
+                                                class="btn-primary">Complete Task</button>
                                     </div>
                                 </div>
                             </div>

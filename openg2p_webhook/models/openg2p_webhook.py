@@ -9,8 +9,18 @@ class CreateWebhook(models.Model):
     webhook_url = fields.Text(
         blank=False
     )
+
     events = fields.Many2one(
-        "openg2p.task.subtype",
+        "openg2p.process.subtype",
         required=True,
         string="Events"
+    )
+
+    type_data = fields.Selection(
+        [
+            ("JSON", "JSON"),
+            ("XML", "XML"),
+        ]
+        ,
+        string="Type"
     )

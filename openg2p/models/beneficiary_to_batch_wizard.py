@@ -105,6 +105,7 @@ class BeneficiaryTransactionWizard(models.TransientModel):
                         "request_id": request_id,
                     }
                 )
+                batch_ids.append(batch.id)
 
                 for b in beneficiaries_list:
                     bank_id = self._get_bank_id(b)

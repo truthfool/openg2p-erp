@@ -33,7 +33,7 @@ class ODKSubmissions(models.Model):
 
     # Method to update/sync submissions from a specific config
     def update_submissions(self, odk_config):
-        updated_submissions_count = self.get_data_from_odk(odk_config)
+        updated_submissions_count, regd_ids = self.get_data_from_odk(odk_config)
 
         config = self.odk_update_configuration(
             {
@@ -43,6 +43,13 @@ class ODKSubmissions(models.Model):
             odk_config.id,
         )
         print("Successfully update config:", config)
+        return regd_ids
+
+    def get_count_response(self, odk, odk_config):
+        return odk.get(
+            (odk_config.odk_project_id, odk_config.odk_form_id),
+            {"$top": 0, "$count": "true"},
+        )  # Call ODK API for new count
 
     def get_count_response(self, odk, odk_config):
         return odk.get(
@@ -66,6 +73,7 @@ class ODKSubmissions(models.Model):
         new_count = count_response["@odata.count"]
         remaining_count = new_count - last_count
 
+        regd_ids = []
         # Over here 100 is the batch size we're considering. And 5 is the offset for additional margin.
         while remaining_count > 100:
             top_count = 100 + 5  # $top
@@ -77,9 +85,10 @@ class ODKSubmissions(models.Model):
                 (odk_config.odk_project_id, odk_config.odk_form_id),
                 {"$top": top_count, "$skip": skip_count, "$count": "true"},
             )
-            self.save_data_into_all(
+            regds = self.save_data_into_all(
                 submission_response["value"], odk_config, odk_batch_id
             )
+            regd_ids.extend(regds)
 
             last_count = last_count + 100
             remaining_count = new_count - last_count
@@ -89,23 +98,15 @@ class ODKSubmissions(models.Model):
                 (odk_config.odk_project_id, odk_config.odk_form_id),
                 {"$top": top_count, "$count": "true"},
             )
-            self.save_data_into_all(
+            regds = self.save_data_into_all(
                 submission_response["value"], odk_config, odk_batch_id
             )
-
-        from ...openg2p_task.models.webhook import webhook_event
-        webhook_data = {
-            "name": "Submissions Pulled",
-            "value": remaining_count,
-            "project_id": odk_config.odk_project_id,
-            "form_id": odk_config.odk_form_id
-        }
-        webhook_event(webhook_data)
-
-        return new_count
+            regd_ids.extend(regds)
+        return new_count, regd_ids
 
     # Umbrella method to save data in odk.submissions and openg2p.registration
     def save_data_into_all(self, odk_response_data, odk_config, odk_batch_id):
+        regd_ids = []
         for value in odk_response_data:
             # Add check if the record already exists in the database
             existing_object = self.search(
@@ -120,7 +121,12 @@ class ODKSubmissions(models.Model):
                 )
 
             else:
-                value.update({"odk_batch_id": odk_batch_id})
+                value.update(
+                    {
+                        "odk_batch_id": odk_batch_id,
+                        "program_ids": odk_config.program_ids.ids,
+                    }
+                )
                 registration = self.create_registration_from_submission(value)
                 self.odk_create_submissions_data(
                     value,
@@ -130,6 +136,8 @@ class ODKSubmissions(models.Model):
                         "odk_batch_id": odk_batch_id,
                     },
                 )
+                regd_ids.append(registration.id)
+        return regd_ids
 
     # Method to add registration record from ODK submission
     def create_registration_from_submission(self, data, extra_data=None):

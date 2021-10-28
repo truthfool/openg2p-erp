@@ -221,6 +221,30 @@ class BatchTransaction(models.Model):
         except BaseException as e:
             print(e)
 
+        url_token = "http://identity.ibank.financial/oauth/token"
+
+        headers_token = {
+            "Platform-TenantId": "ibank-usa",
+            "Authorization": "Basic Y2xpZW50Og==",
+            "Content-Type": "text/plain",
+        }
+        params_token = {
+            "username": os.environ.get("username"),
+            "password": os.environ.get("password"),
+            "grant_type": os.environ.get("grant_type"),
+        }
+
+        try:
+            response_token = requests.request(
+                "POST", url_token, headers=headers_token, params=params_token
+            )
+
+            response_token_data = response_token.json()
+            self.token_response = response_token_data["access_token"]
+
+        except BaseException as e:
+            print(e)
+
         # Uploading to AWS bucket
         uploaded = self.upload_to_aws(csvname, "paymenthub-ee-dev")
 
@@ -247,6 +271,7 @@ class BatchTransaction(models.Model):
         # Emitting disbursement event
         self.env["openg2p.workflow"].handle_tasks("batch_send",self)
 
+    # detailed
     def bulk_transfer_status(self):
 
         url = "http://ops-bk.ibank.financial/api/v1/batch?batchId=c02a14f0-5e7e-44a1-88eb-5584a21e6f28"

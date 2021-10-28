@@ -1,4 +1,3 @@
-from odoo import fields
 from odoo.http import Controller, route, request
 
 
@@ -9,8 +8,8 @@ from odoo.http import Controller, route, request
 # getTasksforRole
 # createTask with stateTransition commands - reassign, changeRole, suspend, close, unassign, approve, reject, changeProgram,bulkReassign, bulkunassign
 
-class Openg2pTaskApi(Controller):
 
+class Openg2pTaskApi(Controller):
     @route("/tasks", type="json", auth="user", methods=["GET"])
     def all_tasks(self):
         try:
@@ -25,7 +24,7 @@ class Openg2pTaskApi(Controller):
                     "status": 200,
                     "message": "Success",
                     "id": id,
-                    "task_details": tasks_all
+                    "task_details": tasks_all,
                 }
             else:
                 return {
@@ -34,10 +33,7 @@ class Openg2pTaskApi(Controller):
                     "error": "No tasks exists",
                 }
         except BaseException as e:
-            return {
-                "status": 400,
-                "error": str(e)
-            }
+            return {"status": 400, "error": str(e)}
 
     @route("/task/<int:id>", type="json", auth="user", methods=["GET"])
     def get_task_by_id(self, id):
@@ -50,7 +46,7 @@ class Openg2pTaskApi(Controller):
                     "status": 200,
                     "message": "Success",
                     "id": id,
-                    "task_details": task.api_json()
+                    "task_details": task.api_json(),
                 }
             else:
                 return {
@@ -59,28 +55,23 @@ class Openg2pTaskApi(Controller):
                     "error": f"Error ! No task by the id {id} exists",
                 }
         except BaseException as e:
-            return {
-                "status": 400,
-                "id": id,
-                "error": str(e)
-            }
+            return {"status": 400, "id": id, "error": str(e)}
 
     @route("/sub-task/<int:id>", type="json", auth="user", methods=["GET"])
     def get_sub_task_for_task_id(self, id):
         try:
-            task = request.env["openg2p.task"].search([("id", "=", id)])
+            subtasks = request.env["openg2p.task.subtype"].search(
+                [("task_type_id", "=", id)]
+            )
 
-            if len(task.subtype_id) > 0:
-                sub_tasks_details = []
-                for st in task.subtype_id:
-                    sub_task = request.env["openg2p.task.subtype"].search([("id", "=", st)])
-                    sub_tasks_details.append(sub_task.api_json())
+            if len(subtasks) > 0:
+                subtasks = list(map(lambda x: x.api_json(), subtasks))
 
                 return {
                     "status": 200,
                     "message": "Success",
                     "task_id": id,
-                    "sub_task": sub_tasks_details
+                    "sub_task": subtasks,
                 }
             else:
                 return {
@@ -89,55 +80,42 @@ class Openg2pTaskApi(Controller):
                     "error": f"Error ! No sub-task for task by the id {id} exists",
                 }
         except BaseException as e:
-            return {
-                "status": 400,
-                "id": id,
-                "error": str(e)
-            }
+            return {"status": 400, "id": id, "error": str(e)}
 
     @route("/process/<int:id>", type="json", auth="user", methods=["GET"])
-    def get_task_by_process(self):
-        task = request.env["openg2p.task"].search([("workflow_pid", "=", id)])
+    def get_tasks_by_process(self, id):
+        tasks = request.env["openg2p.task"].search([("process_id", "=", id)])
 
         try:
-            if len(task) > 0:
-                task = task[0]
+            if len(tasks) > 0:
+                tasks = list(map(lambda x: x.api_json(), tasks))
                 return {
                     "status": 200,
                     "message": "Success",
-                    "workflow process": id,
-                    "task details": task.api_json()
+                    "task_count": len(tasks),
+                    "process": id,
+                    "task details": tasks,
                 }
             else:
                 return {
                     "status": 404,
-                    "workflow process": id,
-                    "error": f"Error ! No task by the workflow process {id} exists",
+                    "process": id,
+                    "error": f"Error ! No task by the process {id} exists",
                 }
         except BaseException as e:
-            return {
-                "status": 400,
-                "id": id,
-                "error": str(e)
-            }
+            return {"status": 400, "id": id, "error": str(e)}
 
     @route("/tasks/user/<int:id>", type="json", auth="user", methods=["GET"])
     def get_tasks_for_user(self, id):
-        user_ids = request.env["res.users"].search([("id", "=", id)])
-
-        tasks = []
+        tasks = request.env["openg2p.task"].search([("assignee_id", "=", id)])
         try:
-            if user_ids:
-                for ids in user_ids:
-                    task_details = request.env["openg2p.task"].search([("assignee_id", "=", ids)])
-                    tasks.append(
-                        task_details.api_json()
-                    )
+            if len(tasks) > 0:
+                tasks = list(map(lambda x: x.api_json(), tasks))
                 return {
                     "status": 200,
                     "message": "Success",
                     "user-id": id,
-                    "task_details": tasks
+                    "task_details": tasks,
                 }
             else:
                 return {
@@ -146,11 +124,7 @@ class Openg2pTaskApi(Controller):
                     "error": f"Error ! No tasks for the user {id} exists",
                 }
         except BaseException as e:
-            return {
-                "status": 400,
-                "user-id": id,
-                "error": str(e)
-            }
+            return {"status": 400, "user-id": id, "error": str(e)}
 
     @route("/tasks/role/<int:id>", type="json", auth="user", methods=["GET"])
     def get_tasks_for_role(self, id):
@@ -168,7 +142,7 @@ class Openg2pTaskApi(Controller):
                     "status": 200,
                     "message": "Success",
                     "role-id": id,
-                    "task_details": tasks_details
+                    "task_details": tasks_details,
                 }
             else:
                 return {
@@ -177,8 +151,4 @@ class Openg2pTaskApi(Controller):
                     "error": f"Error ! No tasks for the role-id {id} exists",
                 }
         except BaseException as e:
-            return {
-                "status": 400,
-                "role-id": id,
-                "error": str(e)
-            }
+            return {"status": 400, "role-id": id, "error": str(e)}
