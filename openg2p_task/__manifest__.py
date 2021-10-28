@@ -17,6 +17,7 @@
         "views/openg2p_workflow_stage.xml",
         "views/openg2p_workflow_type.xml",
         "views/openg2p_workflow.xml",
+        "views/openg2p_webhook.xml",
         "views/action.xml",
         "views/menu.xml",
         "data/openg2p_tasks_data.xml",

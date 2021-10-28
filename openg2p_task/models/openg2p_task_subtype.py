@@ -14,6 +14,10 @@ class Openg2pTaskSubtype(models.Model):
         comodel_name="openg2p.task.role",
         string="Task Role",
     )
+    # webhook_id = fields.Many2one(
+    #     comodel_name="openg2p.webhook",
+    #     string="Webhook ID"
+    # )
 
     @api.onchange("task_type_id")
     def onchange_task_type(self):

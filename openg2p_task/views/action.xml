@@ -106,4 +106,17 @@
         </field>
     </record>
 
+    <record id="action_openg2p_webhook" model="ir.actions.act_window">
+        <field name="name">OpenG2P Webhooks</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">openg2p.webhook</field>
+        <field name="view_type">form</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No webhooks added yet!
+            </p>
+        </field>
+    </record>
+
 </odoo>

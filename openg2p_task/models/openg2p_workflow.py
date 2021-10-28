@@ -103,7 +103,7 @@ class Openg2pWorkflow(models.Model):
                         "entity_id": 0,
                         "status_id": 1,
                         "workflow_id": task.workflow_id,
-                        "description":str(obj.name)
+                        "description": str(obj.name)
                     }
                 )
         elif event_code == "batch_create":
@@ -134,8 +134,26 @@ class Openg2pWorkflow(models.Model):
                         "description": str(obj.name)
                     }
                 )
+                # Sending Emails
                 send_mail(task.assignee_id.name, "ishanranasingh1@gmail.com",
                           f"http://localhost:8069/web#id={obj.id}&model=openg2p.disbursement.batch.transaction")
+
+                # Sending event to webhook url
+                from .webhook import webhook_event
+                
+                events = self.env["openg2p.webhook"].search([("events", "=", 15)])
+
+                webhook_data = {
+                    "Event name": "Batch Created",
+                    "value": {
+                        "id": obj.id,
+                        "Batch name": str(obj.name)
+                    }
+                }
+
+                webhook_event(webhook_data, events.webhook_url)
+
+
 
         elif event_code == "batch_approve":
             task = self.env["openg2p.task"].search(
