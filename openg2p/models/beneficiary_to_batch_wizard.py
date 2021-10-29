@@ -46,8 +46,13 @@ class BeneficiaryTransactionWizard(models.TransientModel):
 
     @api.multi
     def create_batch(self):
+
+        self.task_create_batch(self.batch_name, self.env.context.get("active_ids"))
+        return {"type": "ir.actions.act_window_close"}
+
+    def task_create_batch(self, batch_name, beneficiary_ids):
         beneficiaries_selected = self.env["openg2p.beneficiary"].browse(
-            self.env.context.get("active_ids")
+            beneficiary_ids
         )
 
         batch_wise = {}
@@ -95,7 +100,7 @@ class BeneficiaryTransactionWizard(models.TransientModel):
                 # Creating batch
                 batch = self.env["openg2p.disbursement.batch.transaction"].create(
                     {
-                        "name": self.batch_name
+                        "name": batch_name
                                 + "-"
                                 + str(datetime.now().strftime("%d-%m-%Y-%H:%M")),
                         "program_id": program_id,
@@ -105,7 +110,7 @@ class BeneficiaryTransactionWizard(models.TransientModel):
                         "request_id": request_id,
                     }
                 )
-                batch_ids.append(batch.id)
+                # batch_ids.append(batch.id)
 
                 for b in beneficiaries_list:
                     bank_id = self._get_bank_id(b)
@@ -133,5 +138,3 @@ class BeneficiaryTransactionWizard(models.TransientModel):
         # Changing batch status of records true
         for beneficiary in beneficiaries_selected:
             beneficiary.batch_status = True
-
-        return {"type": "ir.actions.act_window_close"}

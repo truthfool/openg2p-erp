@@ -903,18 +903,6 @@ class Registration(models.Model):
         # Indexing the beneficiary
         self.index_beneficiary()
 
-        from ...openg2p_task.models.webhook import webhook_event
-        webhook_data = {
-            "name": "Beneficiary Created",
-            "value": {
-                "firstname": self.firstname,
-                "lastname": self.lastname,
-                "odk_batch_id": self.odk_batch_id
-            }
-        }
-        webhook_event(webhook_data)
-        # self.webhook_event()
-
         return {
             "type": "ir.actions.act_window",
             "view_type": "form",

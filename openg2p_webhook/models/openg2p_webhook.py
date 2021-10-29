@@ -1,5 +1,7 @@
 from odoo import models, fields
-from odoo.http import Controller, route, request
+import json
+from .task_email import send_mail
+from .webhook import webhook_event
 
 
 class CreateWebhook(models.Model):
@@ -10,8 +12,9 @@ class CreateWebhook(models.Model):
         blank=False
     )
 
-    events = fields.Many2one(
-        "openg2p.process.subtype",
+    events = fields.Many2many(
+        "openg2p.task.subtype",
+        relation="openg2p_webhook_subtypes",
         required=True,
         string="Events"
     )
@@ -22,5 +25,41 @@ class CreateWebhook(models.Model):
             ("XML", "XML"),
         ]
         ,
-        string="Type"
+        string="Type",
+        required=True
     )
+
+    # Send events to webhook URL and emails
+    def create_notification(self, event_code, obj_ids):
+
+        task_subtype_id = self.env["openg2p.process"].get_id_from_ext_id(event_code)
+
+        task_subtype = self.env["openg2p.task.subtype"].search([("id", "=", task_subtype_id)])
+
+        context = json.loads(self.context)
+
+        latest_task_id = json.loads(context["tasks"])[-1]
+
+        latest_task = self.env["openg2p.task"].search([("id", "=", latest_task_id)])
+
+        base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
+
+        if len(task_subtype) > 0:
+            task_subtype = task_subtype[0]
+            for obj_id in obj_ids:
+                # Sending Emails
+                send_mail(latest_task.assignee_id.name, latest_task.assignee_id.email,
+                          f"{base_url}/web#id={obj_id}&model={task_subtype.entity_type_id}")
+
+                # Sending event to webhook url
+                webhook = self.env["openg2p.webhook"].search([("events", "contains", task_subtype.id)])
+
+                webhook_data = {
+                    "eventName": task_subtype.name,
+                    "value": {
+                        "id": obj_id,
+                        "details": latest_task.context or ""
+                    }
+                }
+
+                webhook_event(webhook_data, webhook.webhook_url, webhook.type_data)

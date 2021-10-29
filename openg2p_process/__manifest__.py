@@ -14,7 +14,6 @@
         "views/openg2p_process_stage.xml",
         "views/openg2p_process_type.xml",
         "views/openg2p_process.xml",
-        "views/openg2p_webhook.xml",
         "views/action.xml",
         "views/menu.xml",
         "data/openg2p.process.stage.csv",

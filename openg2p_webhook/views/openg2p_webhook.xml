@@ -10,8 +10,9 @@
                 <form string="Create webhook" import="0">
                     <sheet>
                         <group>
-                            <field name="events" string="Events"/>
+                            <field name="events" string="Events" widget="many2many_tags"/>
                             <field name="webhook_url" string="URL"/>
+                            <field name="type_data"/>
                         </group>
                     </sheet>
                 </form>

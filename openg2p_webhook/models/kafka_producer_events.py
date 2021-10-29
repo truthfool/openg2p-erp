@@ -9,9 +9,8 @@ def producer_events(webhook_data):
                                       value_serializer=lambda x:
                                       dumps(x).encode('utf-8'))
 
-        #Sending events to topics
+        # Sending events to topics
         producer_data.send('erp-events', value=webhook_data)
-        
 
     except KafkaError as e:
         print(e)
