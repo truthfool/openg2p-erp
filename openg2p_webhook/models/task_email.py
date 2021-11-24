@@ -6,11 +6,11 @@ from smtplib import SMTPException
 
 def send_mail(assigne_name, receiver_address, link):
     # The mail addresses and password
-    # assigne_name = "Ishan Ranasingh"
-    sender_address = 'noreply@ibank.financial '
+
+    sender_address = 'noreply@ibank.financial'
     sender_pass = '@y{@TOPFfI{g'
     # receiver_address = 'ranasinghishan@gmail.com'
-    # link = "www.odoo.com"
+
     print(assigne_name, sender_address, receiver_address, link)
 
     mail_content = """From: %s<br>
@@ -24,19 +24,18 @@ def send_mail(assigne_name, receiver_address, link):
 
     """ % (sender_address, receiver_address, assigne_name, link)
 
-    # Setup the MIME
     message = MIMEMultipart()
     message['From'] = sender_address
     message['To'] = receiver_address
-    message['Subject'] = 'OPENG2P Task'  # The subject line
+    message['Subject'] = 'OPENG2P Task'
 
     # The body and the attachments for the mail
     message.attach(MIMEText(mail_content, 'html'))
     try:
         # Create SMTP session for sending the mail
-        session = smtplib.SMTP('199.250.199.36', 587)  # use gmail with port
+        session = smtplib.SMTP('199.250.199.36', 587)
         session.starttls()  # enable security
-        session.login(sender_address, sender_pass)  # login with mail_id and password
+        session.login(sender_address, sender_pass)
         text = message.as_string()
         session.sendmail(sender_address, receiver_address, text)
         session.quit()

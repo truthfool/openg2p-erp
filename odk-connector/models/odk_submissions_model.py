@@ -145,19 +145,6 @@ class ODKSubmissions(models.Model):
         registration = self.env["openg2p.registration"].create_registration_from_odk(
             data
         )
-
-        from ...openg2p_task.models.webhook import webhook_event
-        webhook_data = {
-            "name": "Registrations Created",
-            "value": {
-                "id": data["__id"],
-                "startdate": data["start"],
-                "enddate": data["end"],
-                "batch_id": data["odk_batch_id"]
-            }
-        }
-        webhook_event(webhook_data)
-
         return registration
 
     # Store submissions data in odk.submissions
@@ -194,5 +181,5 @@ class ODKSubmissions(models.Model):
 
     def create(self, vals_list):
         res = super().create(vals_list)
-        self.env["openg2p.workflow"].handle_tasks("odk_pull", res.id)
+        # self.env["openg2p.workflow"].handle_tasks("odk_pull", res.id)
         return res

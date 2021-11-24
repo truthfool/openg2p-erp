@@ -51,10 +51,8 @@ class BeneficiaryTransactionWizard(models.TransientModel):
         return {"type": "ir.actions.act_window_close"}
 
     def task_create_batch(self, batch_name, beneficiary_ids):
-        beneficiaries_selected = self.env["openg2p.beneficiary"].browse(
-            beneficiary_ids
-        )
-
+        beneficiaries_selected = self.env["openg2p.beneficiary"].browse(beneficiary_ids)
+        batch_ids = []
         batch_wise = {}
 
         for b in beneficiaries_selected:
@@ -133,8 +131,9 @@ class BeneficiaryTransactionWizard(models.TransientModel):
                     m.generate_uuid()
 
                 # Emitting events for task
-                self.env["openg2p.workflow"].handle_tasks("batch_create", batch)
+                # self.env["openg2p.workflow"].handle_tasks("batch_create", batch)
 
         # Changing batch status of records true
         for beneficiary in beneficiaries_selected:
             beneficiary.batch_status = True
+        return batch_ids

@@ -98,7 +98,7 @@ class CronBatchCreation(models.Model):
                     m.generate_uuid()
 
                 # Emitting events for task
-                self.env["openg2p.workflow"].handle_tasks("batch_create", batch)
+                # self.env["openg2p.workflow"].handle_tasks("batch_create", batch)
 
         # Changing batch status of records true
         for record in all_beneficiaries:

@@ -33,9 +33,9 @@ class Program(models.Model):
         string="Type",
         required=True,
         help="Nature of the program. \n"
-        "Remuneratory: For programs that are paying workers for work they are performing. E.g. contact tracers "
-        "during and epidermic. \n "
-        "Social Net: Social payments made to beneficiaries",
+             "Remuneratory: For programs that are paying workers for work they are performing. E.g. contact tracers "
+             "during and epidermic. \n "
+             "Social Net: Social payments made to beneficiaries",
         states={"draft": [("readonly", False)]},
         readonly=True,
     )

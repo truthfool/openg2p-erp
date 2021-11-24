@@ -718,7 +718,7 @@ class Registration(models.Model):
         res.sudo().with_delay().ensure_unique(
             mode=MATCH_MODE_COMPREHENSIVE
         )  # let's queue uniqueness check
-        self.env["openg2p.workflow"].handle_tasks("regd_create", res)
+        # self.env["openg2p.workflow"].handle_tasks("regd_create", res)
         return res
 
     @api.multi
@@ -911,32 +911,6 @@ class Registration(models.Model):
             "res_id": beneficiary.id,
             "context": context,
         }
-
-    def webhook_event(self):
-        webhook_data = {
-            "name": "Beneficiary Created",
-            "value": {
-                "firstname": self.firstname,
-                "lastname": self.lastname,
-                "odk_batch_id": self.odk_batch_id
-            }
-        }
-        webhook_url = "http://localhost:8069/webhook-events"
-
-        print(webhook_data)
-
-        # producer_events(webhook_data)
-
-        headers = {
-            'Content-Type': 'application/json'
-        }
-
-        try:
-            response = requests.post(webhook_url, data=json.dumps(webhook_data),
-                                     headers=headers)
-
-        except BaseException as e:
-            print(e)
 
     @api.multi
     def find_duplicates(self):
