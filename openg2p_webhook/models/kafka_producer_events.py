@@ -5,7 +5,7 @@ from kafka.errors import KafkaError
 
 def producer_events(webhook_data):
     try:
-        producer_data = KafkaProducer(bootstrap_servers=['localhost:9092'],
+        producer_data = KafkaProducer(bootstrap_servers=['localhost:2181'],
                                       value_serializer=lambda x:
                                       dumps(x).encode('utf-8'))
 
