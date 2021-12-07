@@ -55,7 +55,7 @@ class CreateWebhook(models.Model):
 
                     # Sending event to webhook url
                     webhooks = self.env["openg2p.webhook"].search([("events", "in", (task_subtype_id,))])
-
+                    print(webhooks,len(webhooks))
                     for webhook in webhooks:
                         webhook_data = {
                             "eventName": task_subtype.name,

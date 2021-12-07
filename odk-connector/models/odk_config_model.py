@@ -99,15 +99,15 @@ class ODKConfig(models.Model):
         )
         print("Call Submission ends")
 
-    def create(self, vals_list):
-        res = super().create(vals_list)
-        # self.env["openg2p.task"].create_task_from_notification(
-        #     "odk_config_create", res.id
-        # )
-        return res
+    # def create(self, vals_list):
+    #     res = super().create(vals_list)
+    #     # self.env["openg2p.task"].create_task_from_notification(
+    #     #     "odk_config_create", res.id
+    #     # )
+    #     return res
 
-    def write(self, vals):
-        # self.env["openg2p.task"].create_task_from_notification(
-        #     "odk_config_update", self.id
-        # )
-        return super().write(vals)
+    # def write(self, vals):
+    #     # self.env["openg2p.task"].create_task_from_notification(
+    #     #     "odk_config_update", self.id
+    #     # )
+    #     return super().write(vals)
