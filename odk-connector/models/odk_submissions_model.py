@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import uuid
 
-from odoo import fields, models
+from odoo import fields, models, api
 from .odk import ODK
 
 
@@ -179,6 +179,7 @@ class ODKSubmissions(models.Model):
             "gender": "gender",
         }
 
+    @api.model
     def create(self, vals_list):
         res = super().create(vals_list)
         # self.env["openg2p.workflow"].handle_tasks("odk_pull", res.id)
