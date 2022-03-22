@@ -29,7 +29,7 @@ class ODKConfig(models.Model):
         # readonly=True
     )
     odk_email = fields.Char(
-        string="ODK User EMail",
+        string="ODK User Email",
         required=True,
         # readonly=True
     )

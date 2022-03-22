@@ -205,7 +205,11 @@ class Openg2pProcess(models.Model):
         if task and len(task) > 0:
             task = task[0]
             # find process for the task
-            process = self.env["openg2p.process"].search([("id", "=", task.process_id)])
+            try:
+                process = self.env["openg2p.process"].search([("id", "=", task.process_id)])
+            except BaseException as e:
+                print(e)
+                return
             if process and len(process) > 0:
                 process = process[0]
                 assert isinstance(process, self.__class__)
