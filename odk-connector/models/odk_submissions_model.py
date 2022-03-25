@@ -75,9 +75,9 @@ class ODKSubmissions(models.Model):
 
         regd_ids = []
         # Over here 100 is the batch size we're considering. And 5 is the offset for additional margin.
-        while remaining_count > 100:
-            top_count = 100 + 5  # $top
-            skip_count = remaining_count - 100  # $skip
+        while remaining_count > 1000:
+            top_count = 1000 + 5  # $top
+            skip_count = remaining_count - 1000  # $skip
 
             # In case of high submission rate we can use '@odata.count' to check if new_count is still the same in the
             # subsequent calls. If the count goes up in the next calls we would need to offset that with $top and $skip
@@ -90,7 +90,7 @@ class ODKSubmissions(models.Model):
             )
             regd_ids.extend(regds)
 
-            last_count = last_count + 100
+            last_count = last_count + 1000
             remaining_count = new_count - last_count
         else:
             top_count = remaining_count + 5  # $top

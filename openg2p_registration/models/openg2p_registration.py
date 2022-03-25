@@ -496,6 +496,11 @@ class Registration(models.Model):
             else:
                 if not str(k).startswith("_"):
                     temp[str(k).replace("-", "_").lower()] = v
+
+        country_id = self.env["res.country"].search([("name", "=", "Sierra Leone")])[0].id
+        state_id = self.env["res.country.state"].search([("name", "=", "Freetown")])[0].id
+        print(country_id)
+        print(state_id)
         regd = self.create(
             {
                 "firstname": "_",
@@ -510,8 +515,8 @@ class Registration(models.Model):
                 )
                 if "city" in temp.keys()
                 else "Freetown",
-                "country_id": 202,
-                "state_id": 710,
+                "country_id": country_id,
+                "state_id": state_id,
                 "gender": "male",
             }
         )

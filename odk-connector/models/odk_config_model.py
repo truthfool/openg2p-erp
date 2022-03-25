@@ -91,13 +91,16 @@ class ODKConfig(models.Model):
     def call_submission(self):
         submissions_obj = self.env["odk.submissions"]
         regd_ids = submissions_obj.update_submissions(self)
-        self.env["openg2p.process"].handle_tasks(
-            [
-                ("task_subtype_odk_pull", self.id),
-                ("task_subtype_regd_create", regd_ids),
-            ]
-        )
-        print("Call Submission ends")
+        try:
+            self.env["openg2p.process"].handle_tasks(
+                [
+                    ("task_subtype_odk_pull", self.id),
+                    ("task_subtype_regd_create", regd_ids),
+                ]
+            )
+            print("Call Submission ends")
+        except BaseException as e:
+            print(e)
 
     # def create(self, vals_list):
     #     res = super().create(vals_list)
