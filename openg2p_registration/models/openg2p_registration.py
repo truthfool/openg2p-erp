@@ -501,26 +501,29 @@ class Registration(models.Model):
         state_id = self.env["res.country.state"].search([("name", "=", "Freetown")])[0].id
         print(country_id)
         print(state_id)
-        regd = self.create(
-            {
-                "firstname": "_",
-                "lastname": "_",
-                "street": (temp["chiefdom"] if "chiefdom" in temp.keys() else "-"),
-                "street2": (temp["district"] if "district" in temp.keys() else "-")
-                + ", "
-                + (temp["region"] if "region" in temp.keys() else "-"),
-                "city": (
-                    (temp["city"] if "city" in temp.keys() else "Freetown")
-                    or "Freetown"
-                )
-                if "city" in temp.keys()
-                else "Freetown",
-                "country_id": country_id,
-                "state_id": state_id,
-                "gender": "male",
-            }
-        )
-        id = regd.id
+        try:
+            regd = self.create(
+                {
+                    "firstname": "_",
+                    "lastname": "_",
+                    "street": (temp["chiefdom"] if "chiefdom" in temp.keys() else "-") ,
+                    "street2": (temp["district"] if "district" in temp.keys() else "-")
+                    + ", "
+                    + (temp["region"] if "region" in temp.keys() else "-"),
+                    "city": (
+                        (temp["city"] if "city" in temp.keys() else "Freetown")
+                        or "Freetown"
+                    )
+                    if "city" in temp.keys()
+                    else "Freetown",
+                    "country_id": country_id,
+                    "state_id": state_id,
+                    "gender": "male",
+                }
+            )
+            id = regd.id
+        except BaseException as e:
+            print(e)
         from datetime import datetime
 
         data = {}

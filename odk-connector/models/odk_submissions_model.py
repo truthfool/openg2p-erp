@@ -73,11 +73,17 @@ class ODKSubmissions(models.Model):
         new_count = count_response["@odata.count"]
         remaining_count = new_count - last_count
 
+        print("Last Count:",last_count)
+        print("New Count:",new_count)
+        print("Remaining Count:",remaining_count)
+        print("Count Response:",count_response)
+
+
         regd_ids = []
         # Over here 100 is the batch size we're considering. And 5 is the offset for additional margin.
-        while remaining_count > 1000:
-            top_count = 1000 + 5  # $top
-            skip_count = remaining_count - 1000  # $skip
+        while remaining_count > 100:
+            top_count = 100 + 5  # $top
+            skip_count = remaining_count - 100 # $skip
 
             # In case of high submission rate we can use '@odata.count' to check if new_count is still the same in the
             # subsequent calls. If the count goes up in the next calls we would need to offset that with $top and $skip
@@ -85,12 +91,14 @@ class ODKSubmissions(models.Model):
                 (odk_config.odk_project_id, odk_config.odk_form_id),
                 {"$top": top_count, "$skip": skip_count, "$count": "true"},
             )
+            print(submission_response)
+            print("SubR Size :",len(submission_response))
             regds = self.save_data_into_all(
                 submission_response["value"], odk_config, odk_batch_id
             )
             regd_ids.extend(regds)
 
-            last_count = last_count + 1000
+            last_count = last_count + 100
             remaining_count = new_count - last_count
         else:
             top_count = remaining_count + 5  # $top
@@ -98,6 +106,8 @@ class ODKSubmissions(models.Model):
                 (odk_config.odk_project_id, odk_config.odk_form_id),
                 {"$top": top_count, "$count": "true"},
             )
+            print(submission_response)
+            print("SubR Size < 100:", len(submission_response))
             regds = self.save_data_into_all(
                 submission_response["value"], odk_config, odk_batch_id
             )
@@ -142,10 +152,13 @@ class ODKSubmissions(models.Model):
     # Method to add registration record from ODK submission
     def create_registration_from_submission(self, data, extra_data=None):
 
-        registration = self.env["openg2p.registration"].create_registration_from_odk(
-            data
-        )
-        return registration
+        try:
+            registration = self.env["openg2p.registration"].create_registration_from_odk(
+                data
+            )
+            return registration
+        except BaseException as e:
+            print(e)
 
     # Store submissions data in odk.submissions
     # Need to pass odoo_corresponding_id and odk_config_id in extra_data
