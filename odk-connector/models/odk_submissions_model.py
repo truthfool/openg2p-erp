@@ -51,11 +51,11 @@ class ODKSubmissions(models.Model):
             {"$top": 0, "$count": "true"},
         )  # Call ODK API for new count
 
-    def get_count_response(self, odk, odk_config):
-        return odk.get(
-            (odk_config.odk_project_id, odk_config.odk_form_id),
-            {"$top": 0, "$count": "true"},
-        )  # Call ODK API for new count
+    # def get_count_response(self, odk, odk_config):
+    #     return odk.get(
+    #         (odk_config.odk_project_id, odk_config.odk_form_id),
+    #         {"$top": 0, "$count": "true"},
+    # Call ODK API for new count
 
     # Method responsible for getting new data from ODK
     def get_data_from_odk(self, odk_config):
@@ -73,17 +73,16 @@ class ODKSubmissions(models.Model):
         new_count = count_response["@odata.count"]
         remaining_count = new_count - last_count
 
-        print("Last Count:",last_count)
-        print("New Count:",new_count)
-        print("Remaining Count:",remaining_count)
-        print("Count Response:",count_response)
-
+        print("Last Count:", last_count)
+        print("New Count:", new_count)
+        print("Remaining Count:", remaining_count)
+        print("Count Response:", count_response)
 
         regd_ids = []
         # Over here 100 is the batch size we're considering. And 5 is the offset for additional margin.
         while remaining_count > 100:
             top_count = 100 + 5  # $top
-            skip_count = remaining_count - 100 # $skip
+            skip_count = remaining_count - 100  # $skip
 
             # In case of high submission rate we can use '@odata.count' to check if new_count is still the same in the
             # subsequent calls. If the count goes up in the next calls we would need to offset that with $top and $skip
@@ -92,7 +91,7 @@ class ODKSubmissions(models.Model):
                 {"$top": top_count, "$skip": skip_count, "$count": "true"},
             )
             print(submission_response)
-            print("SubR Size :",len(submission_response))
+            print("SubR Size :", len(submission_response))
             regds = self.save_data_into_all(
                 submission_response["value"], odk_config, odk_batch_id
             )
@@ -131,34 +130,49 @@ class ODKSubmissions(models.Model):
                 )
 
             else:
-                value.update(
-                    {
-                        "odk_batch_id": odk_batch_id,
-                        "program_ids": odk_config.program_ids.ids,
-                    }
-                )
+                value.update({"odk_batch_id": odk_batch_id})
                 registration = self.create_registration_from_submission(value)
-                self.odk_create_submissions_data(
-                    value,
-                    {
-                        "odk_config_id": odk_config.id,
-                        "odoo_corresponding_id": registration.id,
-                        "odk_batch_id": odk_batch_id,
-                    },
-                )
-                regd_ids.append(registration.id)
+                if registration is not None:
+                    self.odk_create_submissions_data(
+                        value,
+                        {
+                            "odk_config_id": odk_config.id,
+                            "odoo_corresponding_id": registration.id,
+                            "odk_batch_id": odk_batch_id,
+                            "regd_creation_status":True
+                        },
+                    )
+                    regd_ids.append(registration.id)
+                else:
+                    self.odk_create_submissions_data(
+                        value,
+                        {
+                            "odk_config_id": odk_config.id,
+                            "odk_batch_id": odk_batch_id,
+                            "regd_creation_status":False
+                        },
+                    )
         return regd_ids
 
     # Method to add registration record from ODK submission
     def create_registration_from_submission(self, data, extra_data=None):
+        # extra_data = extra_data and extra_data or {}
+        # map_dict = self.get_conversion_dict()
+        # res = {}
 
+        # for k, v in map_dict.items():
+        #     if hasattr(self.env['openg2p.registration'], k) and data.get(v, False):
+        #         res.update({k: data[v]})
+
+        # res.update(extra_data)
+        # registration = self.env['openg2p.registration'].create(res)
         try:
             registration = self.env["openg2p.registration"].create_registration_from_odk(
                 data
             )
             return registration
         except BaseException as e:
-            print(e)
+            print("Failed in creating registration!")
 
     # Store submissions data in odk.submissions
     # Need to pass odoo_corresponding_id and odk_config_id in extra_data
