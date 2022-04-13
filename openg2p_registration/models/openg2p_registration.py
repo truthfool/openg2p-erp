@@ -499,8 +499,7 @@ class Registration(models.Model):
 
         country_id = self.env["res.country"].search([("name", "=", "Sierra Leone")])[0].id
         state_id = self.env["res.country.state"].search([("name", "=", "Freetown")])[0].id
-        print(country_id)
-        print(state_id)
+
         try:
             regd = self.create(
                 {
@@ -524,6 +523,7 @@ class Registration(models.Model):
             id = regd.id
         except BaseException as e:
             print(e)
+            return None
         from datetime import datetime
 
         data = {}

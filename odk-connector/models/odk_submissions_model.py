@@ -31,6 +31,8 @@ class ODKSubmissions(models.Model):
     )
     odk_batch_id = fields.Char()
 
+    regd_creation_status = fields.Boolean(default=False)
+
     # Method to update/sync submissions from a specific config
     def update_submissions(self, odk_config):
         updated_submissions_count, regd_ids = self.get_data_from_odk(odk_config)
@@ -51,12 +53,6 @@ class ODKSubmissions(models.Model):
             {"$top": 0, "$count": "true"},
         )  # Call ODK API for new count
 
-    # def get_count_response(self, odk, odk_config):
-    #     return odk.get(
-    #         (odk_config.odk_project_id, odk_config.odk_form_id),
-    #         {"$top": 0, "$count": "true"},
-    # Call ODK API for new count
-
     # Method responsible for getting new data from ODK
     def get_data_from_odk(self, odk_config):
         odk_batch_id = uuid.uuid4().hex
@@ -73,11 +69,6 @@ class ODKSubmissions(models.Model):
         new_count = count_response["@odata.count"]
         remaining_count = new_count - last_count
 
-        print("Last Count:", last_count)
-        print("New Count:", new_count)
-        print("Remaining Count:", remaining_count)
-        print("Count Response:", count_response)
-
         regd_ids = []
         # Over here 100 is the batch size we're considering. And 5 is the offset for additional margin.
         while remaining_count > 100:
@@ -90,8 +81,6 @@ class ODKSubmissions(models.Model):
                 (odk_config.odk_project_id, odk_config.odk_form_id),
                 {"$top": top_count, "$skip": skip_count, "$count": "true"},
             )
-            print(submission_response)
-            print("SubR Size :", len(submission_response))
             regds = self.save_data_into_all(
                 submission_response["value"], odk_config, odk_batch_id
             )
@@ -105,8 +94,6 @@ class ODKSubmissions(models.Model):
                 (odk_config.odk_project_id, odk_config.odk_form_id),
                 {"$top": top_count, "$count": "true"},
             )
-            print(submission_response)
-            print("SubR Size < 100:", len(submission_response))
             regds = self.save_data_into_all(
                 submission_response["value"], odk_config, odk_batch_id
             )
@@ -118,11 +105,19 @@ class ODKSubmissions(models.Model):
         regd_ids = []
         for value in odk_response_data:
             # Add check if the record already exists in the database
-            existing_object = self.search(
-                [("odk_submission_id", "=", value.get("__id"))]
-            )
+            existing_object = None
 
-            if len(existing_object) >= 1:
+            if value is None or value["group_ey66y74"]["New_EMIS_Code"] == 'null':
+                continue
+
+            try:
+                existing_object = self.search(
+                    [("odk_submission_id", "=", value.get("__id"))]
+                )
+            except BaseException as e:
+                return e
+
+            if existing_object and len(existing_object) >= 1:
                 print(
                     "Submissions with Id: ",
                     value.get("__id"),
@@ -139,7 +134,7 @@ class ODKSubmissions(models.Model):
                             "odk_config_id": odk_config.id,
                             "odoo_corresponding_id": registration.id,
                             "odk_batch_id": odk_batch_id,
-                            "regd_creation_status":True
+                            "regd_creation_status": True,
                         },
                     )
                     regd_ids.append(registration.id)
@@ -149,7 +144,7 @@ class ODKSubmissions(models.Model):
                         {
                             "odk_config_id": odk_config.id,
                             "odk_batch_id": odk_batch_id,
-                            "regd_creation_status":False
+                            "regd_creation_status": False,
                         },
                     )
         return regd_ids
@@ -167,31 +162,38 @@ class ODKSubmissions(models.Model):
         # res.update(extra_data)
         # registration = self.env['openg2p.registration'].create(res)
         try:
-            registration = self.env["openg2p.registration"].create_registration_from_odk(
-                data
-            )
+            registration = self.env[
+                "openg2p.registration"
+            ].create_registration_from_odk(data)
             return registration
         except BaseException as e:
             print("Failed in creating registration!")
+            return None
 
     # Store submissions data in odk.submissions
     # Need to pass odoo_corresponding_id and odk_config_id in extra_data
     def odk_create_submissions_data(self, data, extra_data=None):
-        extra_data = extra_data and extra_data or {}
-        res = {}
-        res.update(
-            {
-                "odk_submission_id": data.get("__id"),
-                "submission_date": data.get("__system").get("submissionDate"),
-                "submission_response": data,
-            }
-        )
-        res.update(extra_data)
-        self.create(res)
+        try:
+            extra_data = extra_data and extra_data or {}
+            res = {}
+            res.update(
+                {
+                    "odk_submission_id": data.get("__id"),
+                    "submission_date": data.get("__system").get("submissionDate"),
+                    "submission_response": data,
+                }
+            )
+            res.update(extra_data)
+            self.create(res)
+        except BaseException as e:
+            print(e)
 
     # Wrapper function to update config
     def odk_update_configuration(self, data, odk_config_id):
-        return self.env["odk.config"].search([("id", "=", odk_config_id)]).write(data)
+        try:
+            return self.env["odk.config"].search([("id", "=", odk_config_id)]).write(data)
+        except BaseException as e:
+            print(e)
 
     # Mappings between openg2p.registration and odk form fields
     def get_conversion_dict(self):
@@ -208,6 +210,9 @@ class ODKSubmissions(models.Model):
 
     @api.model
     def create(self, vals_list):
-        res = super().create(vals_list)
-        # self.env["openg2p.workflow"].handle_tasks("odk_pull", res.id)
-        return res
+        try:
+            res = super().create(vals_list)
+            # self.env["openg2p.workflow"].handle_tasks("odk_pull", res.id)
+            return res
+        except BaseException as e:
+            print(e)
