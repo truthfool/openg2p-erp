@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
+import json
 import uuid
 
+import requests
 from odoo.addons.openg2p.services.matching_service import (
     MATCH_MODE_COMPREHENSIVE,
 )
@@ -9,12 +11,8 @@ from odoo.addons.queue_job.job import job
 from odoo import api, fields, models, SUPERUSER_ID
 from odoo.exceptions import UserError, ValidationError
 from odoo.tools.translate import _
-import requests
-import json
 
 AVAILABLE_PRIORITIES = [("0", "Urgent"), ("1", "High"), ("2", "Normal"), ("3", "Low")]
-
-BASE_URL = "http://3.139.225.16:9080"
 
 
 class Registration(models.Model):
@@ -26,8 +24,8 @@ class Registration(models.Model):
     def _default_stage_id(self):
         ids = (
             self.env["openg2p.registration.stage"]
-                .search([("fold", "=", False)], order="sequence asc", limit=1)
-                .ids
+            .search([("fold", "=", False)], order="sequence asc", limit=1)
+            .ids
         )
         if ids:
             return ids[0]
@@ -497,15 +495,18 @@ class Registration(models.Model):
                 if not str(k).startswith("_"):
                     temp[str(k).replace("-", "_").lower()] = v
 
-        country_id = self.env["res.country"].search([("name", "=", "Sierra Leone")])[0].id
-        state_id = self.env["res.country.state"].search([("name", "=", "Freetown")])[0].id
-
+        country_id = (
+            self.env["res.country"].search([("name", "=", "Sierra Leone")])[0].id
+        )
+        state_id = (
+            self.env["res.country.state"].search([("name", "=", "Freetown")])[0].id
+        )
         try:
             regd = self.create(
                 {
                     "firstname": "_",
                     "lastname": "_",
-                    "street": (temp["chiefdom"] if "chiefdom" in temp.keys() else "-") ,
+                    "street": (temp["chiefdom"] if "chiefdom" in temp.keys() else "-"),
                     "street2": (temp["district"] if "district" in temp.keys() else "-")
                     + ", "
                     + (temp["region"] if "region" in temp.keys() else "-"),
@@ -524,6 +525,7 @@ class Registration(models.Model):
         except BaseException as e:
             print(e)
             return None
+
         from datetime import datetime
 
         data = {}
@@ -726,7 +728,6 @@ class Registration(models.Model):
         res.sudo().with_delay().ensure_unique(
             mode=MATCH_MODE_COMPREHENSIVE
         )  # let's queue uniqueness check
-        # self.env["openg2p.workflow"].handle_tasks("regd_create", res)
         return res
 
     @api.multi
@@ -747,10 +748,10 @@ class Registration(models.Model):
                     vals["stage_id"]
                 )
                 if (
-                        not registration.stage_id.fold
-                        and next_stage.fold
-                        and next_stage.sequence > 1
-                        and registration.active
+                    not registration.stage_id.fold
+                    and next_stage.fold
+                    and next_stage.sequence > 1
+                    and registration.active
                 ):  # ending stage
                     if not registration.beneficiary_id:
                         raise UserError(
@@ -767,8 +768,8 @@ class Registration(models.Model):
                         )
 
                 if (
-                        registration.stage_id.sequence > next_stage.sequence
-                        and registration.beneficiary_id
+                    registration.stage_id.sequence > next_stage.sequence
+                    and registration.beneficiary_id
                 ):
                     raise UserError(
                         _(
@@ -779,7 +780,6 @@ class Registration(models.Model):
                 res = super(Registration, self).write(vals)
         else:
             res = super(Registration, self).write(vals)
-        # self.env["openg2p.task"].create_task_from_notification("regd_update", self.id)
         return res
 
     @api.multi
@@ -799,21 +799,21 @@ class Registration(models.Model):
     def _track_subtype(self, init_values):
         record = self[0]
         if (
-                "beneficiary_id" in init_values
-                and record.beneficiary_id
-                and record.beneficiary_id.active
+            "beneficiary_id" in init_values
+            and record.beneficiary_id
+            and record.beneficiary_id.active
         ):
             return "openg2p_registration.mt_registration_registered"
         elif (
-                "stage_id" in init_values
-                and record.stage_id
-                and record.stage_id.sequence <= 1
+            "stage_id" in init_values
+            and record.stage_id
+            and record.stage_id.sequence <= 1
         ):
             return "openg2p_registration.mt_registration_new"
         elif (
-                "stage_id" in init_values
-                and record.stage_id
-                and record.stage_id.sequence > 1
+            "stage_id" in init_values
+            and record.stage_id
+            and record.stage_id.sequence > 1
         ):
             return "openg2p_registration.mt_registration_stage_changed"
         return super(Registration, self)._track_subtype(init_values)
@@ -839,12 +839,12 @@ class Registration(models.Model):
         self.ensure_one()
 
         if (
-                not self.duplicate_beneficiaries_ids
+            not self.duplicate_beneficiaries_ids
         ):  # last chance to make sure no duplicates
             self.ensure_unique(mode=MATCH_MODE_COMPREHENSIVE)
 
         if (
-                self.duplicate_beneficiaries_ids
+            self.duplicate_beneficiaries_ids
         ):  # TODO ability to force create if maanger... pass via context
             raise ValidationError(
                 _("Potential duplicates exists for this record and so can not be added")
@@ -910,7 +910,6 @@ class Registration(models.Model):
 
         # Indexing the beneficiary
         self.index_beneficiary()
-
         return {
             "type": "ir.actions.act_window",
             "view_type": "form",
@@ -919,172 +918,6 @@ class Registration(models.Model):
             "res_id": beneficiary.id,
             "context": context,
         }
-
-    @api.multi
-    def find_duplicates(self):
-
-        beneficiary_list = self.search_beneficiary()
-
-        if beneficiary_list:
-            beneficiary_list = json.loads(beneficiary_list)
-            beneficiary_ids = [li["beneficiary"] for li in beneficiary_list]
-
-            self.update(
-                {"duplicate_beneficiaries_ids": [(6, 0, list(beneficiary_ids))]}
-            )
-
-    @api.multi
-    def merge_beneficiaries(self):
-
-        # ID to be retained
-        idr = self.retained_id
-
-        # Browsing that existing beneficiary
-        existing_beneficiary = self.env["openg2p.beneficiary"].browse(idr)
-
-        # Fields to be merged
-        overwrite_data = {
-            "location_id": self.location_id.id,
-            "street": self.street,
-            "street2": self.street2,
-            "city": self.city,
-            "state_id": self.state_id.id,
-            "zip": self.zip,
-            "country_id": self.country_id.id,
-            "phone": self.phone,
-            "mobile": self.mobile,
-            "email": self.email,
-            "lang": self.lang,
-            "image": self.image,
-            "marital": self.marital,
-            "bank_account_id": self.bank_account_id.id,
-            "emergency_contact": self.emergency_contact,
-            "emergency_phone": self.emergency_phone,
-        }
-
-        # Removing None fields
-        cleaned_overwrite_data = self.del_none(overwrite_data)
-
-        # Deriving existing fields to create new beneficiary
-        existing_data = {
-            "firstname": existing_beneficiary.firstname,
-            "lastname": existing_beneficiary.lastname,
-            "othernames": existing_beneficiary.othernames,
-            "location_id": existing_beneficiary.location_id.id,
-            "street": existing_beneficiary.street,
-            "street2": existing_beneficiary.street2,
-            "city": existing_beneficiary.city,
-            "state_id": existing_beneficiary.state_id.id,
-            "zip": existing_beneficiary.zip,
-            "country_id": existing_beneficiary.country_id.id,
-            "phone": existing_beneficiary.phone,
-            "mobile": existing_beneficiary.mobile,
-            "email": existing_beneficiary.email,
-            "title": existing_beneficiary.title.id,
-            "lang": existing_beneficiary.lang,
-            "gender": existing_beneficiary.gender,
-            "birthday": existing_beneficiary.birthday,
-            "image": existing_beneficiary.image,
-            "marital": existing_beneficiary.marital,
-            "bank_account_id": existing_beneficiary.bank_account_id.id,
-            "emergency_contact": existing_beneficiary.emergency_contact,
-            "emergency_phone": existing_beneficiary.emergency_phone,
-        }
-
-        cleaned_existing_data = self.del_none(existing_data)
-
-        # Merging specfic fields to beneficiary
-        existing_beneficiary.write(cleaned_overwrite_data)
-        existing_beneficiary.write(
-            {
-                "batch_status": False
-            })
-
-        # Creating new beneficiary whose active=False
-        new_beneficiary = self.env["openg2p.beneficiary"].create(cleaned_existing_data)
-
-        # Storing merged id's in fields
-        existing_beneficiary.write(
-            {"merged_beneficiary_ids": [(4, new_beneficiary.id)]}
-        )
-
-        # Setting active false
-        new_beneficiary.active = False
-        new_beneficiary.batch_status = True
-
-        self.clear_beneficiaries()
-
-        # Archiving the current Registration
-        self.archive_registration()
-        self.retained_id = 0
-
-    def clear_beneficiaries(self):
-        self.write({"duplicate_beneficiaries_ids": [(5, 0, 0)]})
-
-    def index_beneficiary(self):
-        data = {
-            "id": str(self.beneficiary_id.id),
-            "first_name": str(self.firstname),
-            "last_name": str(self.lastname),
-            "email": str(self.email),
-            "phone": str(self.phone),
-            "street": str(self.street),
-            "street2": str(self.street2),
-            "city": str(self.city),
-            "postal_code": str(self.zip),
-            "dob": str(self.birthday),
-            "identity": str(self.identity_passport),
-            "bank": str(self.bank_account_id.bank_id.name),
-            "bank_account": str(self.bank_account_id.sanitized_acc_number),
-            "emergency_contact_name": str(self.emergency_contact),
-            "emergency_contact_phone": str(self.emergency_phone),
-        }
-        # Deleting null fields
-        index_data = self.del_none(data)
-
-        url_endpoint = BASE_URL + "/index"
-        try:
-            r = requests.post(url_endpoint, json=index_data)
-            return r
-        except BaseException as e:
-            return e
-
-    def search_beneficiary(self):
-
-        search_data = {
-            "attributes": {
-                "first_name": str(self.firstname),
-                "last_name": str(self.lastname),
-                "email": str(self.email),
-                "phone": str(self.phone),
-                "street": str(self.street),
-                "street2": str(self.street2),
-                "city": str(self.city),
-                "postal_code": str(self.zip),
-                "dob": str(self.birthday),
-                "identity": str(self.identity_passport),
-                "bank": str(self.bank_account_id.bank_id.name),
-                "bank_account": str(self.bank_account_id.sanitized_acc_number),
-                "emergency_contact_name": str(self.emergency_contact),
-                "emergency_contact_phone": str(self.emergency_phone),
-            }
-        }
-        beneficiary_new_data = self.del_none(search_data)
-
-        search_url = BASE_URL + "/index/search"
-        try:
-            r = requests.post(search_url, json=beneficiary_new_data)
-            return r.text
-        except requests.exceptions.RequestException as e:
-            return e
-
-    def del_none(self, d):
-        for key, value in list(d.items()):
-            if value == "False":
-                del d[key]
-            elif isinstance(value, dict):
-                self.del_none(value)
-        return d
 
     def task_convert_registration_to_beneficiary(self):
         self.stage_id = 6
