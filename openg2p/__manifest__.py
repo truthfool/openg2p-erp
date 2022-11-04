@@ -36,7 +36,7 @@
         "base_currency_iso_4217",
         "module_auto_update",
         "web_notify",
-        # "storage_backend_s3",
+        "storage_backend_s3",
         # "field_image_preview", ## XML parse issue in bitnami odoo image
         # "generic_mixin", ## Both modules causing key error while installing
         # "base_export_async",
